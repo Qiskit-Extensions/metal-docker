@@ -1,10 +1,13 @@
+from flask import Flask
 from qiskit_metal.analyses.quantization.lumped_capacitive import load_q3d_capacitance_matrix
 from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
 
 from scipy.constants import speed_of_light as c_light
 
+app = Flask(__name__)
 
-def demo():
+
+def demo(print_output=True):
     # alice cap matrix
     path1 = './Q1_TwoTransmon_CapMatrix.txt'
     ta_mat, _, _, _ = load_q3d_capacitance_matrix(path1)
@@ -82,12 +85,12 @@ def demo():
         nodes_force_keep=['readout_alice', 'readout_bob'])
 
     cg = composite_sys.circuitGraph()
-    print(cg)
+    if print_output:
+        print(cg)
+    return cg
 
 
-def main():
-    demo()
-
-
-if __name__ == '__main__':
-    main()
+@app.route('/')
+def hello_world():
+    cg = demo(print_output=False)
+    return cg.C_k.to_dataframe().to_json()

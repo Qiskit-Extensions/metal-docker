@@ -1,1 +1,2 @@
 git+git://github.com/Qiskit/qiskit-metal.git@metal-cloud # until yehan-main branch is merged
+Flask==2.0.2
