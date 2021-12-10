@@ -1,8 +1,11 @@
-from flask import Flask
+from flask import Flask, request
 from qiskit_metal.analyses.quantization.lumped_capacitive import load_q3d_capacitance_matrix
 from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
 
 from scipy.constants import speed_of_light as c_light
+import pandas as pd
+import numpy as np
+from collections import defaultdict
 
 app = Flask(__name__)
 
@@ -93,4 +96,109 @@ def demo(print_output=True):
 @app.route('/')
 def hello_world():
     cg = demo(print_output=False)
+    print(type(cg.C_k.to_dataframe().to_json()))
     return cg.C_k.to_dataframe().to_json()
+
+
+def adj_list_to_mat(index, adj_list):
+    """ convert adjacency list representation of capacitance graph to
+    a matrix representation
+    """
+    idx = index
+    dim = len(idx)
+    mat = np.zeros((dim, dim))
+    for n1 in adj_list:
+        for n2, w in adj_list[n1]:
+            r = idx.get_indexer([n1])[0]
+            c = idx.get_indexer([n2])[0]
+            mat[r, c] += w
+            if r != c:
+                mat[c, r] += w
+    return mat
+
+
+def _make_cmat_df(cmat, nodes):
+    """
+    generate a pandas dataframe from a capacitance matrix and list of node names
+    """
+    df = pd.DataFrame(cmat)
+    df.columns = nodes
+    df.index = nodes
+    return df
+
+
+def _df_cmat_to_adj_list(df_cmat: pd.DataFrame):
+    """
+    generate an adjacency list from a capacitance matrix in a dataframe
+    """
+    nodes = df_cmat.columns.values
+    vals = df_cmat.values
+    graph = defaultdict(list)
+    for ii, node in enumerate(nodes):
+        for jj in range(ii, len(nodes)):
+            graph[node].append((nodes[jj], vals[ii, jj]))
+    return graph
+
+
+@app.route('/simulate')
+def simulate():
+    graphs = eval(request.args.get('adjacency_list'))
+    c_mats = []
+    for graph in graphs:
+        nodes = graph.keys()
+        inp_keys_index = pd.Index(nodes)
+        c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, graph), nodes))
+
+    opt1 = dict(
+        node_rename={'coupler_connector_pad_Q1': 'coupling', 'readout_connector_pad_Q1': 'readout_alice'},
+        cap_mat=c_mats[0],
+        ind_dict={('pad_top_Q1', 'pad_bot_Q1'): 10},  # junction inductance in nH
+        jj_dict={('pad_top_Q1', 'pad_bot_Q1'): 'j1'},
+        cj_dict={('pad_top_Q1', 'pad_bot_Q1'): 2},  # junction capacitance in fF
+
+    )
+    cell_1 = Cell(opt1)
+    opt2 = dict(
+        node_rename={'coupler_connector_pad_Q2': 'coupling', 'readout_connector_pad_Q2': 'readout_bob'},
+        cap_mat=c_mats[1],
+        ind_dict={('pad_top_Q2', 'pad_bot_Q2'): 12},  # junction inductance in nH
+        jj_dict={('pad_top_Q2', 'pad_bot_Q2'): 'j2'},
+        cj_dict={('pad_top_Q2', 'pad_bot_Q2'): 2},  # junction capacitance in fF
+
+    )
+    cell_2 = Cell(opt2)
+
+    # subsystem 1: transmon Alice
+    transmon_alice = Subsystem(name='transmon_alice', sys_type='TRANSMON', nodes=['j1'])
+
+    # subsystem 2: transmon Bob
+    transmon_bob = Subsystem(name='transmon_bob', sys_type='TRANSMON', nodes=['j2'])
+
+    # subsystem 3: Alice readout resonator
+    q_opts = dict(
+        f_res=8,  # resonator dressed frequency in GHz
+        Z0=50,  # characteristic impedance in Ohm
+        vp=0.404314 * c_light  # phase velocity
+    )
+    res_alice = Subsystem(name='readout_alice', sys_type='TL_RESONATOR', nodes=['readout_alice'], q_opts=q_opts)
+
+    # subsystem 4: Bob readout resonator
+    q_opts = dict(
+        f_res=7.6,  # resonator dressed frequency in GHz
+        Z0=50,  # characteristic impedance in Ohm
+        vp=0.404314 * c_light  # phase velocity
+    )
+    res_bob = Subsystem(name='readout_bob', sys_type='TL_RESONATOR', nodes=['readout_bob'], q_opts=q_opts)
+
+    composite_sys = CompositeSystem(
+        subsystems=[transmon_alice, transmon_bob, res_alice, res_bob],
+        cells=[cell_1, cell_2],
+        grd_node='ground_main_plane',
+        nodes_force_keep=['readout_alice', 'readout_bob']
+    )
+
+    hilbertspace = composite_sys.add_interaction()
+    hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace, evals_count=30)
+    hamiltonian_results['chi_in_MHz'] = hamiltonian_results['chi_in_MHz'].to_dataframe().to_dict()
+
+    return hamiltonian_results
