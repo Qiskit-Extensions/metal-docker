@@ -6,6 +6,8 @@ from scipy.constants import speed_of_light as c_light
 import pandas as pd
 import numpy as np
 from collections import defaultdict
+import json
+from ast import literal_eval
 
 app = Flask(__name__)
 
@@ -140,33 +142,34 @@ def _df_cmat_to_adj_list(df_cmat: pd.DataFrame):
     return graph
 
 
-@app.route('/simulate')
+def deserialize_tuple_dict_list(serialized_list):
+    print('serialized_list: ', serialized_list)
+    # return [{literal_eval(k): v for k, v in tuple_dict.items()} for tuple_dict in serialized_list]
+    return {literal_eval(k): v for k, v in serialized_list.items()}
+
+
+@app.route('/simulate', methods=['POST'])
 def simulate():
-    graphs = eval(request.args.get('adjacency_list'))
+    adjacency_list = json.loads(request.json['adjacency_list'])
+    node_rename_list = json.loads(request.json['node_rename_list'])
+    ind_dict_list = json.loads(request.json['ind_dict_list'])
+    jj_dict_list = json.loads(request.json['jj_dict_list'])
+    cj_dict_list = json.loads(request.json['cj_dict_list'])
+
     c_mats = []
-    for graph in graphs:
-        nodes = graph.keys()
+    for adjacency in adjacency_list:
+        nodes = adjacency.keys()
         inp_keys_index = pd.Index(nodes)
-        c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, graph), nodes))
+        c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, adjacency), nodes))
 
-    opt1 = dict(
-        node_rename={'coupler_connector_pad_Q1': 'coupling', 'readout_connector_pad_Q1': 'readout_alice'},
-        cap_mat=c_mats[0],
-        ind_dict={('pad_top_Q1', 'pad_bot_Q1'): 10},  # junction inductance in nH
-        jj_dict={('pad_top_Q1', 'pad_bot_Q1'): 'j1'},
-        cj_dict={('pad_top_Q1', 'pad_bot_Q1'): 2},  # junction capacitance in fF
+    cell_list = []
 
-    )
-    cell_1 = Cell(opt1)
-    opt2 = dict(
-        node_rename={'coupler_connector_pad_Q2': 'coupling', 'readout_connector_pad_Q2': 'readout_bob'},
-        cap_mat=c_mats[1],
-        ind_dict={('pad_top_Q2', 'pad_bot_Q2'): 12},  # junction inductance in nH
-        jj_dict={('pad_top_Q2', 'pad_bot_Q2'): 'j2'},
-        cj_dict={('pad_top_Q2', 'pad_bot_Q2'): 2},  # junction capacitance in fF
-
-    )
-    cell_2 = Cell(opt2)
+    for ii in range(len(node_rename_list)):
+        cell_list.append(Cell(dict(node_rename=node_rename_list[ii],
+                              cap_mat=c_mats[ii],
+                              ind_dict=deserialize_tuple_dict_list(json.loads(ind_dict_list[ii])),
+                              jj_dict=deserialize_tuple_dict_list(json.loads(jj_dict_list[ii])),
+                              cj_dict=deserialize_tuple_dict_list(json.loads(cj_dict_list[ii])))))
 
     # subsystem 1: transmon Alice
     transmon_alice = Subsystem(name='transmon_alice', sys_type='TRANSMON', nodes=['j1'])
@@ -192,7 +195,7 @@ def simulate():
 
     composite_sys = CompositeSystem(
         subsystems=[transmon_alice, transmon_bob, res_alice, res_bob],
-        cells=[cell_1, cell_2],
+        cells=cell_list,
         grd_node='ground_main_plane',
         nodes_force_keep=['readout_alice', 'readout_bob']
     )
