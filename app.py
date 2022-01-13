@@ -143,8 +143,6 @@ def _df_cmat_to_adj_list(df_cmat: pd.DataFrame):
 
 
 def deserialize_tuple_dict_list(serialized_list):
-    print('serialized_list: ', serialized_list)
-    # return [{literal_eval(k): v for k, v in tuple_dict.items()} for tuple_dict in serialized_list]
     return {literal_eval(k): v for k, v in serialized_list.items()}
 
 
