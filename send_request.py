@@ -3,6 +3,7 @@ from collections import defaultdict
 import json
 from flask import request
 import pprint as pp
+from scipy.constants import speed_of_light as c_light
 
 
 def serialize_tuple_dict_list(tuple_dict_list):
@@ -50,11 +51,19 @@ ind_dict_list = [{('pad_top_Q1', 'pad_bot_Q1'): 10}, {('pad_top_Q2', 'pad_bot_Q2
 jj_dict_list = [{('pad_top_Q1', 'pad_bot_Q1'): 'j1'}, {('pad_top_Q2', 'pad_bot_Q2'): 'j2'}]
 cj_dict_list = [{('pad_top_Q1', 'pad_bot_Q1'): 2}, {('pad_top_Q2', 'pad_bot_Q2'): 2}]
 
+subsystem_list = [{'name': 'transmon_alice', 'sys_type': 'TRANSMON', 'nodes': ['j1']},
+                  {'name': 'transmon_bob', 'sys_type': 'TRANSMON', 'nodes': ['j2']},
+                  {'name': 'readout_alice', 'sys_type': 'TL_RESONATOR', 'nodes': ['readout_alice'],
+                   'q_opts': {'f_res': 8, 'Z0': 50, 'vp': 0.404314 * c_light}},
+                  {'name': 'readout_bob', 'sys_type': 'TL_RESONATOR', 'nodes': ['readout_bob'],
+                  'q_opts': {'f_res': 7.6, 'Z0': 50, 'vp': 0.404314 * c_light}}]
+
 front_end_data = {'adjacency_list': json.dumps(adjacency_list),
                   'node_rename_list': json.dumps(node_rename_list),
                   'ind_dict_list': json.dumps(serialize_tuple_dict_list(ind_dict_list)),
                   'jj_dict_list': json.dumps(serialize_tuple_dict_list(jj_dict_list)),
-                  'cj_dict_list': json.dumps(serialize_tuple_dict_list(cj_dict_list))}
+                  'cj_dict_list': json.dumps(serialize_tuple_dict_list(cj_dict_list)),
+                  'subsystem_list': json.dumps(subsystem_list)}
 
 resp_data = requests.post('http://localhost:5000/simulate', json=front_end_data)
 

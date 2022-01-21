@@ -153,6 +153,7 @@ def simulate():
     ind_dict_list = json.loads(request.json['ind_dict_list'])
     jj_dict_list = json.loads(request.json['jj_dict_list'])
     cj_dict_list = json.loads(request.json['cj_dict_list'])
+    subsystem_list = json.loads(request.json['subsystem_list'])
 
     c_mats = []
     for adjacency in adjacency_list:
@@ -161,7 +162,6 @@ def simulate():
         c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, adjacency), nodes))
 
     cell_list = []
-
     for ii in range(len(node_rename_list)):
         cell_list.append(Cell(dict(node_rename=node_rename_list[ii],
                               cap_mat=c_mats[ii],
@@ -169,30 +169,17 @@ def simulate():
                               jj_dict=deserialize_tuple_dict_list(json.loads(jj_dict_list[ii])),
                               cj_dict=deserialize_tuple_dict_list(json.loads(cj_dict_list[ii])))))
 
-    # subsystem 1: transmon Alice
-    transmon_alice = Subsystem(name='transmon_alice', sys_type='TRANSMON', nodes=['j1'])
-
-    # subsystem 2: transmon Bob
-    transmon_bob = Subsystem(name='transmon_bob', sys_type='TRANSMON', nodes=['j2'])
-
-    # subsystem 3: Alice readout resonator
-    q_opts = dict(
-        f_res=8,  # resonator dressed frequency in GHz
-        Z0=50,  # characteristic impedance in Ohm
-        vp=0.404314 * c_light  # phase velocity
-    )
-    res_alice = Subsystem(name='readout_alice', sys_type='TL_RESONATOR', nodes=['readout_alice'], q_opts=q_opts)
-
-    # subsystem 4: Bob readout resonator
-    q_opts = dict(
-        f_res=7.6,  # resonator dressed frequency in GHz
-        Z0=50,  # characteristic impedance in Ohm
-        vp=0.404314 * c_light  # phase velocity
-    )
-    res_bob = Subsystem(name='readout_bob', sys_type='TL_RESONATOR', nodes=['readout_bob'], q_opts=q_opts)
+    subsystems = []
+    for subsystem in subsystem_list:
+        if 'q_opts' in subsystem:
+            subsystems.append(Subsystem(name=subsystem['name'], sys_type=subsystem['sys_type'],
+                                        nodes=subsystem['nodes'], q_opts=subsystem['q_opts']))
+        else:
+            subsystems.append(Subsystem(name=subsystem['name'], sys_type=subsystem['sys_type'],
+                                        nodes=subsystem['nodes']))
 
     composite_sys = CompositeSystem(
-        subsystems=[transmon_alice, transmon_bob, res_alice, res_bob],
+        subsystems=subsystems,
         cells=cell_list,
         grd_node='ground_main_plane',
         nodes_force_keep=['readout_alice', 'readout_bob']
