@@ -56,6 +56,13 @@ def deserialize_tuple_dict_list(serialized_list):
     return {literal_eval(k): v for k, v in serialized_list.items()}
 
 
+def convert_netlist_to_maxwell(df):
+    for key in df.keys():
+        df[key][key] = -sum(df[key].values)
+        df[key] = -df[key]
+    return df
+
+
 @app.route('/simulate', methods=['POST'])
 def simulate():
     adjacency_list = json.loads(request.json['adjacency_list'])
@@ -74,7 +81,7 @@ def simulate():
     cell_list = []
     for ii in range(len(node_rename_list)):
         cell_list.append(Cell(dict(node_rename=node_rename_list[ii],
-                              cap_mat=c_mats[ii],
+                              cap_mat=convert_netlist_to_maxwell(c_mats[ii]),
                               ind_dict=deserialize_tuple_dict_list(json.loads(ind_dict_list[ii])),
                               jj_dict=deserialize_tuple_dict_list(json.loads(jj_dict_list[ii])),
                               cj_dict=deserialize_tuple_dict_list(json.loads(cj_dict_list[ii])))))
