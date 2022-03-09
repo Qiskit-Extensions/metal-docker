@@ -1,11 +1,9 @@
 # Quantum SPICE 
 # Converts circuit information to capacitance & inductance graph
+# arbitrary class for each component in the quantum circuit
 
-# arbitrary class for each components in the quantum circuit
-
-class circComp(object):
-
-    circCompList = []
+class CircuitComponent(object):
+    circuit_component_list = []
 
     def __init__(self, name, type, terminals, value, connections, subsystem=None):
         # name (string) -> e.g. C1, I2
@@ -23,8 +21,8 @@ class circComp(object):
         # no connection is shown by []
         self.connections = connections
         self.subsystem = subsystem
-        # add circComp instance to circCompList
-        circComp.circCompList.append(self)      
+        # add CircuitComponent instance to circuit_component_list
+        CircuitComponent.circuit_component_list.append(self)
 
     def __del__(self):
         self.name = None
@@ -33,234 +31,242 @@ class circComp(object):
         self.value = None
         self.connections = None
         self.subsystem = None
-        del self 
+        del self
 
-# clear circuit
-def clearCircCompList():
-    for comp in circComp.circCompList:
-        circComp.__del__(comp)
-    circComp.circCompList = []
+    # clear circuit
 
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-##              Helper Functions              ##
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-# return the circComp that has the input terminal
-def getCompFromTerminal(terminal):
-    for comp in circComp.circCompList:
-        if terminal in comp.terminals:
+def clear_circuit_component_list():
+    for component in CircuitComponent.circuit_component_list:
+        CircuitComponent.__del__(component)
+    CircuitComponent.circuit_component_list = []
+
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# #              Helper Functions              ##
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+# return the CircuitComponent that has the input terminal
+def get_component_from_terminal(terminal):
+    for comp in CircuitComponent.circuit_component_list:
+        if terminal in component.terminals:
             return comp
     raise Exception(terminal + " terminal doesn't exist, perhaps you have a wrong test case?")
 
+
 # return other terminal in the same component 
-# (assume only two terminals in a single componenet)
-def getOtherTermSameComp(terminal):
-    comp = getCompFromTerminal(terminal)
-    for t in comp.terminals:
-        if (t != terminal):
+# (assume only two terminals in a single component)
+def get_other_terminal_same_component(terminal):
+    component = getCompFromTerminal(terminal)
+    for t in component.terminals:
+        if t != terminal:
             return t
-    
+
+
 # return the value of the comp that 
 # the terminal is in
-def getValFromTerminal(terminal):
-    comp = getCompFromTerminal(terminal)
-    return comp.value
+def get_value_from_terminal(terminal):
+    component = get_component_from_terminal(terminal)
+    return component.value
 
-def getCompFromName(name):
-    for comp in circComp.circCompList:
-        if comp.name == name:
+
+def get_comp_from_name(name):
+    for component in CircuitComponent.circuit_component_list:
+        if component.name == name:
             return comp
-    raise Exception(comp + " comp doesn't exist")  
+    raise Exception(comp + " comp doesn't exist")
+
 
 # convert string val to int
-def valToInt(val):
-    num = ''  
+def value_to_int(val):
+    num = ''
     for c in val:
         if c.isdigit():
             num += c
     return int(num)
 
-def getSet(term, cons):
-    conSet = set()
-    conSet.update(cons)
-    conSet.add(term)
-    # nodeDict's key is frozenset
+
+def get_set(term, cons):
+    con_set = set()
+    con_set.update(cons)
+    con_set.add(term)
+    # node_dict's key is frozenset
     return frozenset(conSet)
 
-# return node name if terminal is in nodeDict
+
+# return node name if terminal is in node_dict
 # otherwise, return None
-def tInDict(term, dict):
+def terminal_in_dict(term, dict):
     for entry in dict:
         if term in entry:
             return dict[entry]
     return None
 
-def nodeInList(node1, node2, nTups):
-    if (node1, node2) in nTups or (node2, node1) in nTups:
-        return True
-    else: 
+
+def node_in_list(node1, node2, node_tuples):
+    if (node1, node2) not in node_tuples and (node2, node1) not in node_tuples:
         return False
+    else:
+        return True
 
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-##              Main Functions              ##
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-def convertParallel():
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# #              Main Functions              ##
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+def convert_parallel():
     # make 2d list of comps connected in parallel
-    parallelConnections = []
-    existingComp = []
-    for comp in circComp.circCompList:
-        if comp not in existingComp:
-            conInParallel = [comp]
+    parallel_connections = []
+    existing_components = []
+    for component in CircuitComponent.circuit_component_list:
+        if component not in existingComp:
+            connected_in_parallel = [component]
             connected1 = []
-            for term in comp.connections:
-                for con in comp.connections[term]:
-                    conComp = getCompFromTerminal(con)
+            for term in component.connections:
+                for con in component.connections[term]:
+                    connected_components = getCompFromTerminal(con)
                     # if same type, add in the same list 
-                    if conComp.type == comp.type:
-                        # if same comp connected to both terminals
-                        if conComp in connected1:
-                            conInParallel.append(conComp)
+                    if connected_components.type == component.type:
+                        # if same component connected to both terminals
+                        if connected_components in connected1:
+                            connected_in_parallel.append(connected_components)
                         else:
-                            connected1.append(conComp)     
-            if len(conInParallel) > 1:
-                parallelConnections.append(conInParallel)
-                for c in conInParallel:
-                    existingComp.append(c)
-    # loop through parallelConnections list,
-    # replace parallel-conneted comps with single comp
+                            connected1.append(connected_components)
+            if len(connected_in_parallel) > 1:
+                parallel_connections.append(connected_in_parallel)
+                for c in connected_in_parallel:
+                    existing_components.append(c)
+    # loop through parallel_connections list,
+    # replace parallel-connected components with single component
     # don't remove junctions for now
     for con in parallelConnections:
-        newVal = 0 
+        new_value = 0
         # get new index so that name doesn't overlap
-        ind = str(len(circComp.circCompList) + 1)
-        if con[0].type == "capacitor":       
+        ind = str(len(CircuitComponent.circuit_component_list) + 1)
+        if connection[0].type == "capacitor":
             # make new connections dictionary
-            newConDict = {}
-            newConDict["C" + ind + "_1"] = con[0].connections[con.terminals[0]]
-            newConDict["C" + ind + "_2"] = con[0].connections[con.terminals[1]]
-            for comp in con:
+            new_connection_dict = {"C" + ind + "_1": connection[0].connections[con.terminals[0]],
+                                   "C" + ind + "_2": connection[0].connections[con.terminals[1]]}
+            for component in connection:
                 # add capacitance in parallel
-                newVal += valToInt(comp.value)
+                new_value += value_to_int(component.value)
                 # remove redundant connections
-                for t in comp.terminals:
-                    for conDictTerm in newConDict:
-                        if t in newConDict[conDictTerm]:
-                            newConDict[conDictTerm].remove(t) 
-                circComp.circCompList.remove(comp)      
-            totalVal = str(newVal) + "F"          
+                for t in component.terminals:
+                    for connection_dict_terminal in new_connection_dict:
+                        if t in new_connection_dict[connection_dict_terminal]:
+                            new_connection_dict[connection_dict_terminal].remove(t)
+                CircuitComponent.circuit_component_list.remove(component)
+            total_value = str(new_value) + "F"
             # add new capacitor, remove old ones 
-            circComp("C" + ind, "capacitor", ("C" + ind + "_1", "C" + ind + "_2"), 
-                totalVal, newConDict) 
-        elif con[0].type == "inductor":
-             # make new connections dictionary
-            newConDict = {}
-            newConDict["C" + ind + "_1"] = con[0].connections[con.terminals[0]]
-            newConDict["C" + ind + "_2"] = con[0].connections[con.terminals[1]]
-            for comp in con:
+            CircuitComponent("C" + ind, "capacitor", ("C" + ind + "_1", "C" + ind + "_2"),
+                             total_value, new_connection_dict)
+        elif connection[0].type == "inductor":
+            # make new connections dictionary
+            new_connection_dict = {"C" + ind + "_1": connection[0].connections[connection.terminals[0]],
+                                   "C" + ind + "_2": connection[0].connections[connection.terminals[1]]}
+            for component in connection:
                 # inverse -- 
-                newVal +=  1 / valToInt(comp.value)
+                new_value += 1 / value_to_int(component.value)
                 # remove redundant connections
-                for t in comp.terminals:
-                    for conDictTerm in newConDict:
-                        if t in newConDict[conDictTerm]:
-                            newConDict[conDictTerm].remove(t)  
-                circComp.circCompList.remove(comp)
+                for t in component.terminals:
+                    for connection_dict_terminal in new_connection_dict:
+                        if t in new_connection_dict[connection_dict_terminal]:
+                            new_connection_dict[connection_dict_terminal].remove(t)
+                CircuitComponent.circuit_component_list.remove(component)
             # rounding?    
-            totalVal = str(1 / newVal) + "H"          
+            total_value = str(1 / new_value) + "H"
             # add new capacitor, remove old ones 
-            circComp("I" + ind, "inductor", ("I" + ind + "_1", "I" + ind + "_2"), 
-                totalVal, newConDict) 
+            CircuitComponent("I" + ind, "inductor", ("I" + ind + "_1", "I" + ind + "_2"),
+                             total_value, new_connection_dict)
 
-        elif con[0].type == "junction": 
+        elif connection[0].type == "junction":
             # check other parallel-connected comps to see if there' any capacitors or inductors
             # if all parallel-comps in the group are junctions, throw RUNTIME ERROR #
-            raise Exception ("junctions connected in parallel") 
+            raise Exception("junctions connected in parallel")
 
 
 # loop through each component, 
 # return the list of nodes and the values between them
-def getNodes():
-    #convertParallel()
-    nodeTups = {}
-    nodeDict = {}
+def get_nodes():
+    # convertParallel()
+    node_tuples = {}
+    node_dict = {}
     ind = 0
-    for comp in circComp.circCompList:
-         # for each terminal,
-        nodeName = 'n' + str(ind)
-        for t in comp.terminals:
-            connections = comp.connections[t]
-            fSet = getSet(t, connections)
-            
+    for component in CircuitComponent.circuit_component_list:
+        # for each terminal,
+        node_name = 'n' + str(ind)
+        for terminal in component.terminals:
+            connections = component.connections[terminal]
+            f_set = getSet(terminal, connections)
+
             # check if node already exist
-            if not (fSet in nodeDict):
+            if not (f_set in nodeDict):
                 # add to nodeDict
                 ind += 1
-                nodeName = 'n' + str(ind)
-                nodeDict[fSet] = nodeName
-            
-            # check if connected to other node
-            otherT = getOtherTermSameComp(t)
-            node = tInDict(otherT, nodeDict)
-            if node != None  and node != nodeName and not nodeInList(node, nodeName, nodeTups):
-                val = getValFromTerminal(t)
-                nodeTups[(node, nodeName)] = (val, comp.name)
-    return nodeTups
+                node_name = 'n' + str(ind)
+                node_dict[f_set] = node_name
 
-def getSubsytemDict():
+            # check if connected to other node
+            other_terminal = getother_terminalermSameComp(terminal)
+            node = terminal_in_dict(other_terminal, node_dict)
+            if node is not None and node != node_name and not nodeInList(node, node_name, node_tuples):
+                val = get_value_from_terminal(terminal)
+                node_tuples[(node, node_name)] = (val, component.name)
+    return node_tuples
+
+
+def get_subsystem_dict():
     # dictionary of subsystems
     # values are set of comps in particular subsystem
-    subDict = {}
-    for comp in circComp.circCompList:
-        subSys = comp.subsystem
-        if subSys not in subDict:
-            subDict[subSys] = {comp}
+    subsystem_dict = {}
+    for comp in CircuitComponent.circuit_component_list:
+        subsystem = component.subsystem
+        if subsystem not in subsystem_dict:
+            subsystem_dict[subsystem] = {comp}
         else:
-            subDict[subSys].add(comp)
-    return subDict
+            subsystem_dict[subsystem].add(component)
+    return subsystem_dict
 
-def getCompNameSS():
+
+def get_comp_name_subsystem():
     # dictionary of subsystems
     # values are set of comps' names in particular subsystem
-    subDict = {}
-    for comp in circComp.circCompList:
-        subSys = comp.subsystem
-        if subSys not in subDict:
-            subDict[subSys] = {comp.name}
+    subsystem_dict = {}
+    for component in CircuitComponent.circuit_component_list:
+        subsystem = component.subsystem
+        if subsystem not in subsystem_dict:
+            subsystem_dict[subsystem] = {component.name}
         else:
-            subDict[subSys].add(comp.name)
-    return subDict
+            subsystem_dict[subsystem].add(component.name)
+    return subsystem_dict
 
 
-def getIndList(nodeTups):
+def get_ind_list(node_tuples):
     ind_list = []
     # one dictionary per subsystem
     ind_dict = {}
-    subSysDict = getSubsytemDict()
-    for subSys in subSysDict:
-        for tup in nodeTups:         
-            val = nodeTups[tup][0]
-            comp = getCompFromName(nodeTups[tup][1])
-            compSS = comp.subsystem
-            # if has value of inductance and is in current subSys
-            if val[-1] == 'H' and subSys == compSS:
-                intVal = valToInt(val)
-                ind_dict[tup] = intVal
+    subsystem_dict = getSubsytemDict()
+    for subsystem in subsystem_dict:
+        for tup in node_tuples:
+            value = node_tuples[tup][0]
+            component = getCompFromName(node_tuples[tup][1])
+            component_subsystem = component.subsystem
+            # if value has unit of inductance and is in current subsystem
+            if value[-1] == 'H' and subsystem == component_subsystem:
+                integer_value = value_to_int(value)
+                ind_dict[tup] = integer_value
         if ind_dict != {}:
             ind_list.append(ind_dict)
         ind_dict = {}
     return ind_list
 
 
-
-
-
-
-
 def test():
-    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ##                Test Case 1                 ##
-    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    # #                Test Case 1                 ##
+    # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     #         (S1)       (S1)  
     #       -- C1 --  -- C2 -- 
@@ -270,26 +276,28 @@ def test():
     #        -- C3 -- ---------
     #           (S2)
 
-    C1 = circComp("C1", "capacitor", ("C1_1", "C1_2"), "5F", {"C1_1": ["I2_2"], "C1_2": ["C2_1"]}, 'S1')
-    C2 = circComp("C2", "capacitor", ("C2_1", "C2_2"), "7F", {"C2_1": ["C1_2"], "C2_2": ["I1_1"]}, 'S1') 
-    I1 = circComp("I1", "inductor", ("I1_1", "I1_2"), "3H", {"I1_1": ["C2_2"], "I1_2": ["C3_1"]}, 'S1') 
-    C3 = circComp("C3", "capacitor", ("C3_1", "C3_2"), "9F", {"C3_1": ["I1_2"], "C3_2": ["I2_1"]}, 'S2') 
-    I2 = circComp("I2", "inductor", ("I2_1", "I2_2"), "11H", {"I2_1": ["C3_2"], "I2_2": ["C1_1"]}, 'S2') 
-     
-    print("Test case 1: nodeTups::")
-    nodeT = getNodes()
+    c1 = CircuitComponent("C1", "capacitor", ("C1_1", "C1_2"), "5F", {"C1_1": ["I2_2"], "C1_2": ["C2_1"]}, 'S1')
+    c2 = CircuitComponent("C2", "capacitor", ("C2_1", "C2_2"), "7F", {"C2_1": ["C1_2"], "C2_2": ["I1_1"]}, 'S1')
+    i1 = CircuitComponent("I1", "inductor", ("I1_1", "I1_2"), "3H", {"I1_1": ["C2_2"], "I1_2": ["C3_1"]}, 'S1')
+    c3 = CircuitComponent("C3", "capacitor", ("C3_1", "C3_2"), "9F", {"C3_1": ["I1_2"], "C3_2": ["I2_1"]}, 'S2')
+    i2 = CircuitComponent("I2", "inductor", ("I2_1", "I2_2"), "11H", {"I2_1": ["C3_2"], "I2_2": ["C1_1"]}, 'S2')
+
+    print('c1:', c1, '\nc2:', c2, '\ni1:', i1, '\nc3:', c3, '\ni2:', i2)
+
+    print("Test case 1: node_tuples::")
+    node_terminal = getNodes()
     print("Node Dictionary::")
-    print(nodeT)
-    print("Subsystem Dictionary::")
+    print(node_terminal)
+    print("subsystem Dictionary::")
     print(getCompNameSS())
     print("Ind_List::")
-    print(getIndList(nodeT))
+    print(getIndList(node_terminal))
     print("\n")
-    clearCircCompList()
+    clearcircuit_component_list()
 
-    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ##                Test Case 2                 ##
-    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    # #                Test Case 2                 ##
+    # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     #         (S1)       (S1)  
     #        -- C1 -- -- C2 --_ 
@@ -299,23 +307,28 @@ def test():
     #        -- I2 -- -- C4 ---
     #           (S2)     (S2)
 
-    C1 = circComp("C1", "capacitor", ("C1_1", "C1_2"), "5F", {"C1_1": ["I3_1"], "C1_2": ["C2_1", "C3_1"]}, 'S1')
-    C2 = circComp("C2", "capacitor", ("C2_1", "C2_2"), "7F", {"C2_1": ["C1_2", "C3_1"], "C2_2": ["I1_1"]}, 'S1') 
-    C3 = circComp("C3", "capacitor", ("C3_1", "C3_2"), "9F", {"C3_1": ["C1_2", "C2_1"], "C3_2": ["C4_1", "I2_2"]}, 'S1') 
-    I1 = circComp("I1", "inductor", ("I1_1", "I1_2"), "3H", {"I1_1": ["C2_2"], "I1_2": ["C4_2"]}, 'S1') 
-    C4 = circComp("C4", "capacitor", ("C4_1", "C4_2"), "11F", {"C4_1": ["C3_2", "I2_2"], "C4_2": ["I1_2"]}, 'S2') 
-    I2 = circComp("I2", "inductor", ("I2_1", "I2_2"), "20H", {"I2_1": ["I3_2"], "I2_2": ["C3_2", "C4_1"]}, 'S2') 
-    I3 = circComp("I3", "inductor", ("I3_1", "I3_2"), "25H", {"I3_1": ["C1_1"], "I3_2": ["I2_1"]}, 'S2') 
-     
-    print("Test case 2: nodeTups::")
-    nodeT = getNodes()
+    c1 = CircuitComponent("C1", "capacitor", ("C1_1", "C1_2"), "5F", {"C1_1": ["I3_1"], "C1_2": ["C2_1", "C3_1"]}, 'S1')
+    c2 = CircuitComponent("C2", "capacitor", ("C2_1", "C2_2"), "7F", {"C2_1": ["C1_2", "C3_1"], "C2_2": ["I1_1"]}, 'S1')
+    c3 = CircuitComponent("C3", "capacitor", ("C3_1", "C3_2"), "9F",
+                          {"C3_1": ["C1_2", "C2_1"], "C3_2": ["C4_1", "I2_2"]}, 'S1')
+    i1 = CircuitComponent("I1", "inductor", ("I1_1", "I1_2"), "3H", {"I1_1": ["C2_2"], "I1_2": ["C4_2"]}, 'S1')
+    c4 = CircuitComponent("C4", "capacitor", ("C4_1", "C4_2"), "11F", {"C4_1": ["C3_2", "I2_2"], "C4_2": ["I1_2"]},
+                          'S2')
+    i2 = CircuitComponent("I2", "inductor", ("I2_1", "I2_2"), "20H", {"I2_1": ["I3_2"], "I2_2": ["C3_2", "C4_1"]}, 'S2')
+    i3 = CircuitComponent("I3", "inductor", ("I3_1", "I3_2"), "25H", {"I3_1": ["C1_1"], "I3_2": ["I2_1"]}, 'S2')
+
+    print('c1:', c1, '\nc2:', c2, '\nc3:', c3, '\ni1:', i1, '\nc4:', c4, '\ni2:', i2, '\ni3:', i3)
+
+    print("Test case 2: node_tuples::")
+    node_terminal = getNodes()
     print("Node Dictionary::")
-    print(nodeT)
-    print("Subsystem Dictionary::")
+    print(node_terminal)
+    print("subsystem Dictionary::")
     print(getCompNameSS())
     print("Ind_List::")
-    print(getIndList(nodeT))
+    print(getIndList(node_terminal))
     print("\n")
-    clearCircCompList()
+    clearcircuit_component_list()
+
 
 test()
