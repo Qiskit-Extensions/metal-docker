@@ -49,16 +49,16 @@ def clear_circuit_component_list():
 
 # return the CircuitComponent that has the input terminal
 def get_component_from_terminal(terminal):
-    for comp in CircuitComponent.circuit_component_list:
+    for component in CircuitComponent.circuit_component_list:
         if terminal in component.terminals:
-            return comp
+            return component
     raise Exception(terminal + " terminal doesn't exist, perhaps you have a wrong test case?")
 
 
 # return other terminal in the same component 
 # (assume only two terminals in a single component)
 def get_other_terminal_same_component(terminal):
-    component = getCompFromTerminal(terminal)
+    component = get_component_from_terminal(terminal)
     for t in component.terminals:
         if t != terminal:
             return t
@@ -71,11 +71,11 @@ def get_value_from_terminal(terminal):
     return component.value
 
 
-def get_comp_from_name(name):
+def get_component_from_name(name):
     for component in CircuitComponent.circuit_component_list:
         if component.name == name:
-            return comp
-    raise Exception(comp + " comp doesn't exist")
+            return component
+    raise Exception(component + " comp doesn't exist")
 
 
 # convert string val to int
@@ -88,11 +88,11 @@ def value_to_int(val):
 
 
 def get_set(term, cons):
-    con_set = set()
-    con_set.update(cons)
-    con_set.add(term)
+    connection_set = set()
+    connection_set.update(cons)
+    connection_set.add(term)
     # node_dict's key is frozenset
-    return frozenset(conSet)
+    return frozenset(connection_set)
 
 
 # return node name if terminal is in node_dict
@@ -121,12 +121,12 @@ def convert_parallel():
     parallel_connections = []
     existing_components = []
     for component in CircuitComponent.circuit_component_list:
-        if component not in existingComp:
+        if component not in existing_components:
             connected_in_parallel = [component]
             connected1 = []
             for term in component.connections:
                 for con in component.connections[term]:
-                    connected_components = getCompFromTerminal(con)
+                    connected_components = get_component_from_terminal(con)
                     # if same type, add in the same list 
                     if connected_components.type == component.type:
                         # if same component connected to both terminals
@@ -136,19 +136,19 @@ def convert_parallel():
                             connected1.append(connected_components)
             if len(connected_in_parallel) > 1:
                 parallel_connections.append(connected_in_parallel)
-                for c in connected_in_parallel:
-                    existing_components.append(c)
+                for connection in connected_in_parallel:
+                    existing_components.append(connection)
     # loop through parallel_connections list,
     # replace parallel-connected components with single component
     # don't remove junctions for now
-    for con in parallelConnections:
+    for connection in parallel_connections:
         new_value = 0
         # get new index so that name doesn't overlap
-        ind = str(len(CircuitComponent.circuit_component_list) + 1)
+        index = str(len(CircuitComponent.circuit_component_list) + 1)
         if connection[0].type == "capacitor":
             # make new connections dictionary
-            new_connection_dict = {"C" + ind + "_1": connection[0].connections[con.terminals[0]],
-                                   "C" + ind + "_2": connection[0].connections[con.terminals[1]]}
+            new_connection_dict = {"C" + index + "_1": connection[0].connections[connection.terminals[0]],
+                                   "C" + index + "_2": connection[0].connections[connection.terminals[1]]}
             for component in connection:
                 # add capacitance in parallel
                 new_value += value_to_int(component.value)
@@ -160,12 +160,12 @@ def convert_parallel():
                 CircuitComponent.circuit_component_list.remove(component)
             total_value = str(new_value) + "F"
             # add new capacitor, remove old ones 
-            CircuitComponent("C" + ind, "capacitor", ("C" + ind + "_1", "C" + ind + "_2"),
+            CircuitComponent("C" + ind, "capacitor", ("C" + index + "_1", "C" + index + "_2"),
                              total_value, new_connection_dict)
         elif connection[0].type == "inductor":
             # make new connections dictionary
-            new_connection_dict = {"C" + ind + "_1": connection[0].connections[connection.terminals[0]],
-                                   "C" + ind + "_2": connection[0].connections[connection.terminals[1]]}
+            new_connection_dict = {"C" + index + "_1": connection[0].connections[connection.terminals[0]],
+                                   "C" + index + "_2": connection[0].connections[connection.terminals[1]]}
             for component in connection:
                 # inverse -- 
                 new_value += 1 / value_to_int(component.value)
@@ -178,7 +178,7 @@ def convert_parallel():
             # rounding?    
             total_value = str(1 / new_value) + "H"
             # add new capacitor, remove old ones 
-            CircuitComponent("I" + ind, "inductor", ("I" + ind + "_1", "I" + ind + "_2"),
+            CircuitComponent("I" + ind, "inductor", ("I" + index + "_1", "I" + index + "_2"),
                              total_value, new_connection_dict)
 
         elif connection[0].type == "junction":
@@ -193,25 +193,25 @@ def get_nodes():
     # convertParallel()
     node_tuples = {}
     node_dict = {}
-    ind = 0
+    index = 0
     for component in CircuitComponent.circuit_component_list:
         # for each terminal,
-        node_name = 'n' + str(ind)
+        node_name = 'n' + str(index)
         for terminal in component.terminals:
             connections = component.connections[terminal]
-            f_set = getSet(terminal, connections)
+            f_set = get_set(terminal, connections)
 
             # check if node already exist
-            if not (f_set in nodeDict):
-                # add to nodeDict
-                ind += 1
-                node_name = 'n' + str(ind)
+            if not (f_set in node_dict):
+                # add to node_dict
+                index += 1
+                node_name = 'n' + str(index)
                 node_dict[f_set] = node_name
 
             # check if connected to other node
-            other_terminal = getother_terminalermSameComp(terminal)
+            other_terminal = get_other_terminal_same_component(terminal)
             node = terminal_in_dict(other_terminal, node_dict)
-            if node is not None and node != node_name and not nodeInList(node, node_name, node_tuples):
+            if node is not None and node != node_name and not node_in_list(node, node_name, node_tuples):
                 val = get_value_from_terminal(terminal)
                 node_tuples[(node, node_name)] = (val, component.name)
     return node_tuples
@@ -221,16 +221,16 @@ def get_subsystem_dict():
     # dictionary of subsystems
     # values are set of comps in particular subsystem
     subsystem_dict = {}
-    for comp in CircuitComponent.circuit_component_list:
+    for component in CircuitComponent.circuit_component_list:
         subsystem = component.subsystem
         if subsystem not in subsystem_dict:
-            subsystem_dict[subsystem] = {comp}
+            subsystem_dict[subsystem] = {component}
         else:
             subsystem_dict[subsystem].add(component)
     return subsystem_dict
 
 
-def get_comp_name_subsystem():
+def get_component_name_subsystem():
     # dictionary of subsystems
     # values are set of comps' names in particular subsystem
     subsystem_dict = {}
@@ -243,15 +243,15 @@ def get_comp_name_subsystem():
     return subsystem_dict
 
 
-def get_ind_list(node_tuples):
+def get_index_list(node_tuples):
     ind_list = []
     # one dictionary per subsystem
     ind_dict = {}
-    subsystem_dict = getSubsytemDict()
+    subsystem_dict = get_subsystem_dict()
     for subsystem in subsystem_dict:
         for tup in node_tuples:
             value = node_tuples[tup][0]
-            component = getCompFromName(node_tuples[tup][1])
+            component = get_component_from_name(node_tuples[tup][1])
             component_subsystem = component.subsystem
             # if value has unit of inductance and is in current subsystem
             if value[-1] == 'H' and subsystem == component_subsystem:
@@ -285,15 +285,15 @@ def test():
     print('c1:', c1, '\nc2:', c2, '\ni1:', i1, '\nc3:', c3, '\ni2:', i2)
 
     print("Test case 1: node_tuples::")
-    node_terminal = getNodes()
+    node_terminal = get_nodes()
     print("Node Dictionary::")
     print(node_terminal)
-    print("subsystem Dictionary::")
-    print(getCompNameSS())
+    print("Subsystem Dictionary::")
+    print(get_component_name_subsystem())
     print("Ind_List::")
-    print(getIndList(node_terminal))
+    print(get_index_list(node_terminal))
     print("\n")
-    clearcircuit_component_list()
+    clear_circuit_component_list()
 
     # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     # #                Test Case 2                 ##
@@ -320,15 +320,15 @@ def test():
     print('c1:', c1, '\nc2:', c2, '\nc3:', c3, '\ni1:', i1, '\nc4:', c4, '\ni2:', i2, '\ni3:', i3)
 
     print("Test case 2: node_tuples::")
-    node_terminal = getNodes()
+    node_terminal = get_nodes()
     print("Node Dictionary::")
     print(node_terminal)
-    print("subsystem Dictionary::")
-    print(getCompNameSS())
+    print("Subsystem Dictionary::")
+    print(get_component_name_subsystem())
     print("Ind_List::")
-    print(getIndList(node_terminal))
+    print(get_index_list(node_terminal))
     print("\n")
-    clearcircuit_component_list()
+    clear_circuit_component_list()
 
 
 test()
