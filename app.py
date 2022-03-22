@@ -9,6 +9,7 @@ import numpy as np
 from collections import defaultdict
 import json
 from ast import literal_eval
+from graph_conversion import CircuitComponent, get_nodes, get_capacitor_list
 
 app = Flask(__name__)
 CORS(app)
@@ -163,6 +164,30 @@ def convert_netlist_to_maxwell(df):
 def simulate():
     req = request.get_json()
     print("Circuit Graph:", req["CircuitGraph"])
+    for component_name, component_metadata in req['CircuitGraph'].items():
+        if component_metadata['subsystem']:
+            print('subsystem:', component_metadata['subsystem'])
+            subsystem = component_metadata['subsystem']['name']
+        else:
+            subsystem = None
+
+        if (component_metadata['label'] == 'capacitor') or (component_metadata['label'] == 'josephson junction'):
+            value = str(component_metadata['value']['capacitance']) + 'F'
+        else:
+            value = str(component_metadata['value']['inductance']) + 'H'
+
+        circuit_component = CircuitComponent(component_name,
+                                             component_metadata['label'],
+                                             component_metadata['terminals'],
+                                             value,
+                                             component_metadata['connections'],
+                                             subsystem)
+        print('Circuit component:', circuit_component)
+
+    nodes_list = get_nodes()
+    capacitor_list = get_capacitor_list(nodes_list)
+    print('Capacitor list:', capacitor_list)
+
     # adjacency_list = json.loads(req['adjacencyList'])
     # node_rename_list = json.loads(req['nodeRenameList'])
     # ind_dict_list = req['indDictList']

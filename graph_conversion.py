@@ -160,7 +160,7 @@ def convert_parallel():
                 CircuitComponent.circuit_component_list.remove(component)
             total_value = str(new_value) + "F"
             # add new capacitor, remove old ones 
-            CircuitComponent("C" + ind, "capacitor", ("C" + index + "_1", "C" + index + "_2"),
+            CircuitComponent("C" + index, "capacitor", ("C" + index + "_1", "C" + index + "_2"),
                              total_value, new_connection_dict)
         elif connection[0].type == "inductor":
             # make new connections dictionary
@@ -178,7 +178,7 @@ def convert_parallel():
             # rounding?    
             total_value = str(1 / new_value) + "H"
             # add new capacitor, remove old ones 
-            CircuitComponent("I" + ind, "inductor", ("I" + index + "_1", "I" + index + "_2"),
+            CircuitComponent("I" + index, "inductor", ("I" + index + "_1", "I" + index + "_2"),
                              total_value, new_connection_dict)
 
         elif connection[0].type == "junction":
@@ -244,9 +244,9 @@ def get_component_name_subsystem():
 
 
 def get_inductor_list(node_tuples):
-    ind_list = []
+    inductor_list = []
     # one dictionary per subsystem
-    ind_dict = {}
+    inductor_dict = {}
     subsystem_dict = get_subsystem_dict()
     for subsystem in subsystem_dict:
         for tup in node_tuples:
@@ -256,11 +256,31 @@ def get_inductor_list(node_tuples):
             # if value has unit of inductance and is in current subsystem
             if value[-1] == 'H' and subsystem == component_subsystem:
                 integer_value = value_to_int(value)
-                ind_dict[tup] = integer_value
-        if ind_dict != {}:
-            ind_list.append(ind_dict)
-        ind_dict = {}
-    return ind_list
+                inductor_dict[tup] = integer_value
+        if inductor_dict != {}:
+            inductor_list.append(inductor_dict)
+        inductor_dict = {}
+    return inductor_list
+
+
+def get_capacitor_list(node_tuples):
+    capacitor_list = []
+    # one dictionary per subsystem
+    capacitor_dict = {}
+    subsystem_dict = get_subsystem_dict()
+    for subsystem in subsystem_dict:
+        for tup in node_tuples:
+            value = node_tuples[tup][0]
+            component = get_component_from_name(node_tuples[tup][1])
+            component_subsystem = component.subsystem
+            # if value has unit of inductance and is in current subsystem
+            if value[-1] == 'F' and subsystem == component_subsystem:
+                integer_value = value_to_int(value)
+                capacitor_dict[tup] = integer_value
+        if capacitor_dict != {}:
+            capacitor_list.append(capacitor_dict)
+        capacitor_dict = {}
+    return capacitor_list
 
 
 def test():
@@ -290,8 +310,10 @@ def test():
     print(node_terminal)
     print("Subsystem Dictionary::")
     print(get_component_name_subsystem())
-    print("Ind_List::")
+    print("Inductor_list::")
     print(get_inductor_list(node_terminal))
+    print("Capacitor list::")
+    print(get_capacitor_list(node_terminal))
     print("\n")
     clear_circuit_component_list()
 
@@ -325,10 +347,10 @@ def test():
     print(node_terminal)
     print("Subsystem Dictionary::")
     print(get_component_name_subsystem())
-    print("Ind_List::")
+    print("Inductor_list::")
     print(get_inductor_list(node_terminal))
     print("\n")
     clear_circuit_component_list()
 
 
-test()
+# test()
