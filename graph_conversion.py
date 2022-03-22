@@ -243,7 +243,7 @@ def get_component_name_subsystem():
     return subsystem_dict
 
 
-def get_index_list(node_tuples):
+def get_inductor_list(node_tuples):
     ind_list = []
     # one dictionary per subsystem
     ind_dict = {}
@@ -291,7 +291,7 @@ def test():
     print("Subsystem Dictionary::")
     print(get_component_name_subsystem())
     print("Ind_List::")
-    print(get_index_list(node_terminal))
+    print(get_inductor_list(node_terminal))
     print("\n")
     clear_circuit_component_list()
 
@@ -326,7 +326,7 @@ def test():
     print("Subsystem Dictionary::")
     print(get_component_name_subsystem())
     print("Ind_List::")
-    print(get_index_list(node_terminal))
+    print(get_inductor_list(node_terminal))
     print("\n")
     clear_circuit_component_list()
 
