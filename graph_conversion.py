@@ -63,12 +63,12 @@ class CircuitComponent(object):
 
 
 class Circuit(object):
-    def __init__(self):
+    def __init__(self, circuit_component_list):
         """
         Create a circuit object to manage circuit-level operations using a circuit component list and
         circuit-level methods
         """
-        self._circuit_component_list = []
+        self._circuit_component_list = circuit_component_list
 
     def clear_circuit_component_list(self):
         """
@@ -206,7 +206,7 @@ class Circuit(object):
                 other_terminal = self.get_other_terminal_same_component(terminal)
                 node = terminal_in_dict(other_terminal, node_dict)
                 if node is not None and node != node_name and not node_in_list(node, node_name, node_tuples):
-                    val = get_value_from_terminal(terminal)
+                    val = self.get_value_from_terminal(terminal)
                     node_tuples[(node, node_name)] = (val, component.name)
         return node_tuples
 
@@ -257,3 +257,26 @@ class Circuit(object):
                 inductor_list.append(inductor_dict)
             inductor_dict = {}
         return inductor_list
+
+
+def test():
+    cq = CircuitComponent("Cq", "capacitor", ("Cq_1", "Cq_2"), "5F",
+                          {"Cq_1": ["J1_1", "GND"], "Cq_2": ["J1_2", "Cc_1"]}, 'transmon_alice')
+    # cc = CircuitComponent("Cc", "capacitor", ("Cc_1", "Cc_2"), "5F",
+    #                       {"Cc_1": ["J1_2", "Cq_2"], "Cc_2": ["R1_1"]}, {})
+    cl = CircuitComponent("Cl", "capacitor", ("Cl_1", "Cl_2"), "10F",
+                          {"Cl_1": ["GND"], "Cl_2": ["R1_1"]}, 'readout_resonator')
+    # j1 = CircuitComponent("J1", "josephson_junction", ("J1_1", "J1_2"), "2F_10H",
+    #                       {"J1_1": ["GND", "Cq_1"], "J1_2": ["Cq_2", "Cc_1"]}, 'transmon_alice')
+
+    # print('cq:', cq, '\ncl:', cl, '\nj1:', j1)
+    print('cq:', cq, '\ncl:', cl)
+
+    # circuit = Circuit([cq, cl, j1])
+    circuit = Circuit([cq, cl])
+    nodes = circuit.get_nodes()
+    inductor_list = circuit.get_inductor_list(nodes)
+    print(inductor_list)
+
+
+test()
