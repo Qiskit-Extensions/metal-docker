@@ -3,6 +3,9 @@
 # arbitrary class for each component in the quantum circuit
 
 def value_to_int(val):
+    """
+    Convert value to integer
+    """
     num = ''
     for c in val:
         if c.isdigit():
@@ -10,25 +13,31 @@ def value_to_int(val):
     return int(num)
 
 
-def get_set(term, cons):
+def get_set(terminal, connections):
+    """
+    Get connection set given a terminal and a list of connections
+    """
     connection_set = set()
-    connection_set.update(cons)
-    connection_set.add(term)
-    # node_dict's key is frozenset
+    connection_set.update(connections)
+    connection_set.add(terminal)
     return frozenset(connection_set)
 
 
-# return node name if terminal is in node_dict
-# otherwise, return None
-def terminal_in_dict(term, dict):
-    for entry in dict:
+def terminal_in_dict(term, node_dict):
+    """
+    Return node name if terminal is in node_dict, otherwise, return None
+    """
+    for entry in node_dict:
         if term in entry:
-            return dict[entry]
+            return node_dict[entry]
     return None
 
 
-def node_in_list(node1, node2, node_tuples):
-    if (node1, node2) not in node_tuples and (node2, node1) not in node_tuples:
+def node_in_list(node1, node2, node_tuple_list):
+    """
+    Return True if a node tuple is in the given node tuple list
+    """
+    if (node1, node2) not in node_tuple_list and (node2, node1) not in node_tuple_list:
         return False
     else:
         return True
@@ -36,48 +45,50 @@ def node_in_list(node1, node2, node_tuples):
 
 class CircuitComponent(object):
     def __init__(self, name, type, terminals, value, connections, subsystem=None):
-        # name (string) -> e.g. C1, I2
+        """
+        name (string) -> e.g. C1 or I2
+        type (string) => e.g. capacitor or inductor
+        terminal (string tuple) => e.g. (C1_1, C1_2)
+        value (string) => e.g. 4F, 15H
+        connection (dictionary w string key and string list value) => e.g. {C1_1: [C2_1, I1_2], C1_2: []}
+        stores list of connections between => self.terminals (key) & other terminals (values)
+        no connection is shown by []
+        """
         self.name = name
-        # type (string) => e.g. capacitor, inductor
         self.type = type
-        # terminal (string tuple) => e.g. (C1_1, C1_2)
         self.terminals = terminals
-        # value (string) => e.g. 4F, 15H
         self.value = value
-        # connection (dictionary w string key and string list value)
-        # e.g. {C1_1: [C2_1, I1_2], C1_2: []}
-        # stores list of connections between
-        # self.terminals (key) & other terminals (values)
-        # no connection is shown by []
         self.connections = connections
         self.subsystem = subsystem
-
-    def __del__(self):
-        self.name = None
-        self.type = None
-        self.terminals = None
-        self.value = None
-        self.connections = None
-        self.subsystem = None
-        del self
 
 
 class Circuit(object):
     def __init__(self):
+        """
+        Create a circuit object to manage circuit-level operations using a circuit component list and
+        circuit-level methods
+        """
         self._circuit_component_list = []
 
     def clear_circuit_component_list(self):
+        """
+        Clear the circuit component list
+        """
         self._circuit_component_list = []
 
-    # return the CircuitComponent that has the input terminal
     def get_component_from_terminal(self, terminal):
+        """
+        Return the CircuitComponent that has the give input terminal
+        """
         for component in self._circuit_component_list:
             if terminal in component.terminals:
                 return component
-        raise Exception(terminal + " terminal doesn't exist, perhaps you have a wrong test case?")
+        raise Exception("Terminal " + terminal + " doesn't exist, perhaps you have a wrong test case?")
 
     def convert_parallel(self):
-        # make 2d list of comps connected in parallel
+        """
+        Make 2d list of components connected in parallel
+        """
         parallel_connections = []
         existing_components = []
         for component in self._circuit_component_list:
@@ -146,73 +157,39 @@ class Circuit(object):
                 # if all parallel-comps in the group are junctions, throw RUNTIME ERROR #
                 raise Exception("junctions connected in parallel")
 
-    # return other terminal in the same component
-    # (assume only two terminals in a single component)
     def get_other_terminal_same_component(self, terminal):
+        """
+        Return other terminal in the same component (assume only two terminals in a single component)
+        """
         component = self.get_component_from_terminal(terminal)
         for t in component.terminals:
             if t != terminal:
                 return t
 
-    # return the value of the comp that
-    # the terminal is in
     def get_value_from_terminal(self, terminal):
+        """
+        Return the value of the component that the terminal is in
+        """
         component = self.get_component_from_terminal(terminal)
         return component.value
 
     def get_component_from_name(self, name):
+        """
+        Given the name of a component, return the CircuitComponent object
+        """
         for component in self._circuit_component_list:
             if component.name == name:
                 return component
-        raise Exception(component + " comp doesn't exist")
+        raise Exception("Component " + name + " doesn't exist")
 
-    def get_inductor_list(self, node_tuples):
-        inductor_list = []
-        # one dictionary per subsystem
-        inductor_dict = {}
-        subsystem_dict = get_subsystem_dict()
-        for subsystem in subsystem_dict:
-            for tup in node_tuples:
-                value = node_tuples[tup][0]
-                component = self.get_component_from_name(node_tuples[tup][1])
-                component_subsystem = component.subsystem
-                # if value has unit of inductance and is in current subsystem
-                if value[-1] == 'H' and subsystem == component_subsystem:
-                    integer_value = value_to_int(value)
-                    inductor_dict[tup] = integer_value
-            if inductor_dict != {}:
-                inductor_list.append(inductor_dict)
-            inductor_dict = {}
-        return inductor_list
-
-    def get_capacitor_list(self, node_tuples):
-        capacitor_list = []
-        # one dictionary per subsystem
-        capacitor_dict = {}
-        subsystem_dict = get_subsystem_dict()
-        for subsystem in subsystem_dict:
-            for tup in node_tuples:
-                value = node_tuples[tup][0]
-                component = self.get_component_from_name(node_tuples[tup][1])
-                component_subsystem = component.subsystem
-                # if value has unit of inductance and is in current subsystem
-                if value[-1] == 'F' and subsystem == component_subsystem:
-                    integer_value = value_to_int(value)
-                    capacitor_dict[tup] = integer_value
-            if capacitor_dict != {}:
-                capacitor_list.append(capacitor_dict)
-            capacitor_dict = {}
-        return capacitor_list
-
-    # loop through each component,
-    # return the list of nodes and the values between them
     def get_nodes(self):
-        # convertParallel()
+        """
+        Loop through each component and return the list of nodes and the values between them
+        """
         node_tuples = {}
         node_dict = {}
         index = 0
         for component in self._circuit_component_list:
-            # for each terminal,
             node_name = 'n' + str(index)
             for terminal in component.terminals:
                 connections = component.connections[terminal]
@@ -234,8 +211,9 @@ class Circuit(object):
         return node_tuples
 
     def get_subsystem_dict(self):
-        # dictionary of subsystems
-        # values are set of comps in particular subsystem
+        """
+        Return dictionary of subsystems - values are set of components in particular subsystem
+        """
         subsystem_dict = {}
         for component in self._circuit_component_list:
             subsystem = component.subsystem
@@ -246,8 +224,9 @@ class Circuit(object):
         return subsystem_dict
 
     def get_component_name_subsystem(self):
-        # dictionary of subsystems
-        # values are set of comps' names in particular subsystem
+        """
+        Dictionary of subsystems - values are set of components' names in particular subsystem
+        """
         subsystem_dict = {}
         for component in self._circuit_component_list:
             subsystem = component.subsystem
@@ -256,3 +235,25 @@ class Circuit(object):
             else:
                 subsystem_dict[subsystem].add(component.name)
         return subsystem_dict
+
+    def get_inductor_list(self, node_tuples):
+        """
+        Get the inductor list for the current Circuit object
+        """
+        inductor_list = []
+        # one dictionary per subsystem
+        inductor_dict = {}
+        subsystem_dict = self.get_subsystem_dict()
+        for subsystem in subsystem_dict:
+            for tup in node_tuples:
+                value = node_tuples[tup][0]
+                component = self.get_component_from_name(node_tuples[tup][1])
+                component_subsystem = component.subsystem
+                # if value has unit of inductance and is in current subsystem
+                if value[-1] == 'H' and subsystem == component_subsystem:
+                    integer_value = value_to_int(value)
+                    inductor_dict[tup] = integer_value
+            if inductor_dict != {}:
+                inductor_list.append(inductor_dict)
+            inductor_dict = {}
+        return inductor_list
