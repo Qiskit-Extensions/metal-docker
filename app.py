@@ -9,8 +9,8 @@ import numpy as np
 from collections import defaultdict
 import json
 from ast import literal_eval
-from graph_conversion import CircuitComponent, get_nodes, get_capacitor_list
-
+from graph_conversion.graph_conversion.graph_conversion import CircuitComponent, Circuit, Subsystem2
+import pprint as pp
 app = Flask(__name__)
 CORS(app)
 
@@ -112,7 +112,9 @@ def adj_list_to_mat(index, adj_list):
     dim = len(idx)
     mat = np.zeros((dim, dim))
     for n1 in adj_list:
+        print('n1:', n1)
         for n2, w in adj_list[n1]:
+            print('n2:', n2, '\nw:', w)
             r = idx.get_indexer([n1])[0]
             c = idx.get_indexer([n2])[0]
             mat[r, c] += w
@@ -163,71 +165,62 @@ def convert_netlist_to_maxwell(df):
 @app.route('/simulate', methods=['POST'])
 def simulate():
     req = request.get_json()
-    print("Circuit Graph:", req["CircuitGraph"])
-    for component_name, component_metadata in req['CircuitGraph'].items():
-        if component_metadata['subsystem']:
-            print('subsystem:', component_metadata['subsystem'])
-            subsystem = component_metadata['subsystem']['name']
+    circuit_mvp = Circuit(req['Circuit Graph'])
+
+    nodeT = circuit_mvp.get_nodes()
+    capacitance_graph = circuit_mvp.get_capacitance_graph(nodeT)
+
+    new_capacitance_graph = {}
+    for node, connections in capacitance_graph.items():
+        new_capacitance_graph[node] = []
+        for connection_node, capacitance in connections.items():
+            new_capacitance_graph[node].append((connection_node, float(capacitance)))
+
+    c_mats = []
+    nodes = new_capacitance_graph.keys()
+    inp_keys_index = pd.Index(nodes)
+    c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph), nodes))
+    converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
+
+    inductor_list = circuit_mvp.get_inductor_list(nodeT)
+    junction_list = circuit_mvp.get_junction_list(nodeT)
+    component_name_subsystem = circuit_mvp.get_component_name_subsystem()
+    subsystem_map = circuit_mvp.get_subsystem_map(component_name_subsystem, nodeT)
+
+    subsystem_list = req['Subsystems']
+
+    # Check subsystem_map to see if the pair of nodes is in the junction list and replace if it is
+    for subsystem, nodes in subsystem_map.items():
+        if tuple(nodes) in junction_list[0].keys():
+            subsystem_list[subsystem]['nodes'] = [junction_list[0][tuple(nodes)]]
         else:
-            subsystem = None
+            # If the node tuple is not a key in the junction list, remove the ground node, and set 
+            # 'nodes' for the subsystem in subsystem_list to the remaining nodes
+            if subsystem is not None:
+                subsystem_list[subsystem]['nodes'] = [list(nodes).remove('GND')]
 
-        if (component_metadata['label'] == 'capacitor') or (component_metadata['label'] == 'josephson junction'):
-            value = str(component_metadata['value']['capacitance']) + 'F'
-        else:
-            value = str(component_metadata['value']['inductance']) + 'H'
+    subsystems = []
+    for subsystem, subsystem_metadata in subsystem_list.items():
+        subsystems.append(Subsystem(name=subsystem, sys_type=subsystem_metadata['subsystem_type'],
+                                    nodes=subsystem_metadata['nodes'], q_opts=subsystem_metadata.get('options', None)))
 
-        circuit_component = CircuitComponent(component_name,
-                                             component_metadata['label'],
-                                             component_metadata['terminals'],
-                                             value,
-                                             component_metadata['connections'],
-                                             subsystem)
-        print('Circuit component:', circuit_component)
+    cell_list = []
+    cell_list.append(Cell(dict(node_rename={},
+                            cap_mat=converted_capacitance,
+                            ind_dict=inductor_list[0],
+                            jj_dict=junction_list[0],
+                            cj_dict={})))
+    
+    composite_sys = CompositeSystem(
+        subsystems=subsystems,
+        cells=cell_list,
+        grd_node='GND',
+        nodes_force_keep=['n2']
+    )
+    
+    hilbertspace = composite_sys.add_interaction()
+    hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace, evals_count=30)
+    hamiltonian_results['chi_in_MHz'] = hamiltonian_results['chi_in_MHz'].to_dataframe().to_dict()
 
-    nodes_list = get_nodes()
-    capacitor_list = get_capacitor_list(nodes_list)
-    print('Capacitor list:', capacitor_list)
-
-    # adjacency_list = json.loads(req['adjacencyList'])
-    # node_rename_list = json.loads(req['nodeRenameList'])
-    # ind_dict_list = req['indDictList']
-    # jj_dict_list = json.loads(req['jjDictList'])
-    # cj_dict_list = json.loads(req['cjDictList'])
-    #
-    # subsystem_list = json.loads(req['subsystemList'])
-    #
-    # c_mats = []
-    # for adjacency in adjacency_list:
-    #     nodes = adjacency.keys()
-    #     inp_keys_index = pd.Index(nodes)
-    #     c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, adjacency), nodes))
-    #
-    # cell_list = []
-    # for ii in range(len(node_rename_list)):
-    #     print(c_mats[ii])
-    #     converted = convert_netlist_to_maxwell(c_mats[ii])
-    #     print(converted)
-    #     cell_list.append(Cell(dict(node_rename=node_rename_list[ii],
-    #                           cap_mat=converted,
-    #                           ind_dict=deserialize_tuple_dict_list(json.loads(ind_dict_list[ii])),
-    #                           jj_dict=deserialize_tuple_dict_list(jj_dict_list[ii]),
-    #                           cj_dict=deserialize_tuple_dict_list(cj_dict_list[ii]))))
-    #
-    # subsystems = []
-    # for subsystem in subsystem_list:
-    #     subsystems.append(Subsystem(name=subsystem['name'], sys_type=subsystem['sys_type'],
-    #                                 nodes=subsystem['nodes'], q_opts=subsystem.get('q_opts', None)))
-    #
-    # composite_sys = CompositeSystem(
-    #     subsystems=subsystems,
-    #     cells=cell_list,
-    #     grd_node='ground_main_plane',
-    #     nodes_force_keep=['readout_alice', 'readout_bob']
-    # )
-    #
-    # hilbertspace = composite_sys.add_interaction()
-    # hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace, evals_count=30)
-    # hamiltonian_results['chi_in_MHz'] = hamiltonian_results['chi_in_MHz'].to_dataframe().to_dict()
-
-    # return hamiltonian_results
-    return '0'
+    return hamiltonian_results
+    # return '0'
