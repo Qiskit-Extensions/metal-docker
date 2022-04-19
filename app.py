@@ -162,22 +162,67 @@ def convert_netlist_to_maxwell(df):
     return df_new
 
 
+def dict_to_float(dictionary):
+    new_dictionary = {}
+    for key, value in dictionary.items():
+        new_dictionary[key] = float(value)
+    
+    return new_dictionary
+
+
 @app.route('/simulate', methods=['POST'])
 def simulate():
     req = request.get_json()
-    circuit_mvp = Circuit(req['Circuit Graph'])
+    circuit_graph = req['Circuit Graph']
+    
+    print('Circuit Graph:')
+    pp.pp(circuit_graph)
+
+    new_circuit_graph = {}
+
+    for component_name, component_metadata in circuit_graph.items():
+        if component_metadata['component_type'] != 'composite_subsystem':
+            new_circuit_graph[component_name] = component_metadata
+            new_circuit_graph[component_name]['value'] = dict_to_float(component_metadata['value'])
+        else:
+            new_circuit_graph['capacitor_2'] = {}
+            new_circuit_graph['capacitor_2']['label'] = 'capacitor'
+            new_circuit_graph['capacitor_2']['component_type'] = 'capacitor'
+            new_circuit_graph['capacitor_2']['terminals'] = ['capacitor_2_1', 'capacitor_2_2']
+            new_circuit_graph['capacitor_2']['value'] = dict_to_float(component_metadata['value'])
+            new_circuit_graph['capacitor_2']['connections'] = {}
+            new_circuit_graph['capacitor_2']['connections']['capacitor_2_1'] = ['capacitor_1_2']
+            new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = []
+            new_circuit_graph['capacitor_2']['subsystem'] = component_metadata['subsystem']
+
+    new_circuit_graph['capacitor_1']['connections']['capacitor_1_2'] = ['capacitor_2_1']
+    new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = ['GND_gnd']
+    new_circuit_graph['josephson_junction_0']['value']['inductance'] = 10.0
+
+    print('new_circuit_graph:')
+    pp.pp(new_circuit_graph)
+
+    print('Subsystems:')
+    pp.pp(req['Subsystems'])
+    
+    circuit_mvp = Circuit(new_circuit_graph)
 
     nodeT = circuit_mvp.get_nodes()
     capacitance_graph = circuit_mvp.get_capacitance_graph(nodeT)
 
-    new_capacitance_graph = {}
+    # Process capacitance graph to include self-capacitance for ground
+    # for node,  capacitance in
+    # {'n1': {'n1': 0, 'GND': 7, 'n2': 5}, 'n2':{'n2': 0, 'GND': 10}, 'GND': {'GND': 0}}
+
+    new_capacitance_graph = {} #restructure data to work with LOM code
     for node, connections in capacitance_graph.items():
         new_capacitance_graph[node] = []
         for connection_node, capacitance in connections.items():
             new_capacitance_graph[node].append((connection_node, float(capacitance)))
 
     c_mats = []
-    nodes = new_capacitance_graph.keys()
+    # nodes = new_capacitance_graph.keys()
+    nodes = ['n1', 'capacitor_2', 'GND_gnd']
     inp_keys_index = pd.Index(nodes)
     c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph), nodes))
     converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
@@ -197,7 +242,7 @@ def simulate():
             # If the node tuple is not a key in the junction list, remove the ground node, and set 
             # 'nodes' for the subsystem in subsystem_list to the remaining nodes
             if subsystem is not None:
-                subsystem_list[subsystem]['nodes'] = [list(nodes).remove('GND')]
+                subsystem_list[subsystem]['nodes'] = [n for n in nodes if n!='GND_gnd']
 
     subsystems = []
     for subsystem, subsystem_metadata in subsystem_list.items():
@@ -214,8 +259,8 @@ def simulate():
     composite_sys = CompositeSystem(
         subsystems=subsystems,
         cells=cell_list,
-        grd_node='GND',
-        nodes_force_keep=['n2']
+        grd_node='GND_gnd',
+        nodes_force_keep=['capacitor_2']
     )
     
     hilbertspace = composite_sys.add_interaction()

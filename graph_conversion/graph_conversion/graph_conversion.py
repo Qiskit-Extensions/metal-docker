@@ -104,12 +104,12 @@
     #                                 "Cc_1"
     #                             ]
     #                         },
-    #                         "label": "josephson junction",
+    #                         "label": "josephson_junction",
     #                         "terminals": [
     #                             "J1_1",
     #                             "J1_2"
     #                         ],
-    #                         "component_type": "josephson junction",
+    #                         "component_type": "josephson_junction",
     #                         "value": {
     #                             "capacitance": 2,
     #                             "inductance": 10
@@ -210,12 +210,12 @@
 #                                     "Cc_1"
 #                                 ]
 #                             },
-#                             "label": "josephson junction",
+#                             "label": "josephson_junction",
 #                             "terminals": [
 #                                 "J1_1",
 #                                 "J1_2"
 #                             ],
-#                             "component_type": "josephson junction",
+#                             "component_type": "josephson_junction",
 #                             "value": {
 #                                 "capacitance": 2,
 #                                 "inductance": 10
@@ -265,12 +265,12 @@
 #                                     "Cc_1"
 #                                 ]
 #                             },
-#                             "label": "josephson junction",
+#                             "label": "josephson_junction",
 #                             "terminals": [
 #                                 "J1_1",
 #                                 "J1_2"
 #                             ],
-#                             "component_type": "josephson junction",
+#                             "component_type": "josephson_junction",
 #                             "value": {
 #                                 "capacitance": 2,
 #                                 "inductance": 10
@@ -503,20 +503,20 @@ class Circuit:
     def populate_circuit_component_list(self):
         self._circuit_component_list = []
 
-
         for component_name, component_metadata in self._circuit_graph.items():
             if component_metadata['subsystem']:
-                subsystem = component_metadata['subsystem']['name']
+                subsystem = component_metadata['subsystem']
             else:
                 subsystem = None
 
-            circuit_component = CircuitComponent(component_name,
-                                                 component_metadata['component_type'],
-                                                 component_metadata['terminals'],
-                                                 component_metadata['value'],
-                                                 component_metadata['connections'],
-                                                 subsystem)
-            self._circuit_component_list.append(circuit_component)
+            if component_name != 'GND':
+                circuit_component = CircuitComponent(component_name,
+                                                    component_metadata['component_type'],
+                                                    component_metadata['terminals'],
+                                                    component_metadata['value'],
+                                                    component_metadata['connections'],
+                                                    subsystem)
+                self._circuit_component_list.append(circuit_component)
 
     def populate_component_terminals(self):
         for _, component_metadata in self._circuit_graph.items():
@@ -576,7 +576,7 @@ class Circuit:
         conSet = set()
         conSet.update(cons)
         conSet.add(term)
-        conSet.discard('GND')
+        conSet.discard('GND_gnd')
         # nodeDict's key is frozenset
         return frozenset(conSet)
 
@@ -609,10 +609,10 @@ class Circuit:
                 for term in comp.connections:
                     for con in comp.connections[term]:
                         # skip resonator and ground node 
-                        if con[0] != 'R' and con != 'GND':
+                        if con[0] != 'R' and con != 'GND_gnd':
                             conComp = self.get_component_from_terminal(con)
                             # if same label, add in the same list 
-                            if (comp.component_type == 'josephson junction') or (conComp.component_type == comp.component_type) or (conComp.component_type == 'josephson junction'):
+                            if (comp.component_type == 'josephson_junction') or (conComp.component_type == comp.component_type) or (conComp.component_type == 'josephson_junction'):
                                 # if same comp connected to both terminals
                                 if conComp in connected1:
                                     conInParallel.append(conComp)
@@ -633,7 +633,7 @@ class Circuit:
             hasJunction = False 
             junction = None
             for comp in con: 
-                if (comp.component_type == 'josephson junction'):
+                if (comp.component_type == 'josephson_junction'):
                     hasJunction = True
                     junction = comp
 
@@ -645,7 +645,7 @@ class Circuit:
                 for comp in con:
                     if (comp.name != junction.name):
                         # add capacitance and inductance in parallel
-                        if comp.component_type == 'josephson junction':
+                        if comp.component_type == 'josephson_junction':
                             cap = comp.value['capacitance']
                             indu = comp.value['inductance']
                             newCap += cap
@@ -720,10 +720,10 @@ class Circuit:
             for t in comp.terminals:
                 connections = comp.connections[t]
                 
-                if 'GND' in connections: 
+                if 'GND_gnd' in connections: 
                     groundSet.update(connections)
                     groundSet.add(t)
-                    groundSet.discard('GND')
+                    groundSet.discard('GND_gnd')
                 else: 
                     fSet = self.get_set(t, connections)
                     # check if node already exist
@@ -741,7 +741,7 @@ class Circuit:
                         and (not self.node_in_list(node, nodeName, nodeTups))):
                         nodeTups[(node, nodeName)] = (val, comp.name)
                     elif otherT in groundSet:
-                        nodeTups[(nodeName, 'GND')] = (val, comp.name)
+                        nodeTups[(nodeName, 'GND_gnd')] = (val, comp.name)
 
         return nodeTups
 
@@ -808,7 +808,7 @@ class Circuit:
                 comp = self.get_component_from_name(nodeTups[tup][1])
                 compSS = comp.subsystem
                 # if has value of inductance and is in current subSys
-                if comp.component_type == 'josephson junction' and subSys == compSS:
+                if comp.component_type == 'josephson_junction' and subSys == compSS:
                     junctionDict[tup] = comp.name
             if junctionDict != {}:
                 junctionList.append(junctionDict)
@@ -937,7 +937,7 @@ def test():
                         "J1": {
                             "connections": {
                                 "J1_1": [
-                                    "GND",
+                                    "GND_gnd",
                                     "Cq_1"
                                 ],
                                 "J1_2": [
@@ -945,12 +945,12 @@ def test():
                                     "Cc_1"
                                 ]
                             },
-                            "label": "josephson junction",
+                            "label": "josephson_junction",
                             "terminals": [
                                 "J1_1",
                                 "J1_2"
                             ],
-                            "component_type": "josephson junction",
+                            "component_type": "josephson_junction",
                             "value": {
                                 "capacitance": 2,
                                 "inductance": 10
@@ -963,7 +963,7 @@ def test():
                             "connections": {
                                 "Cq_1": [
                                     "J1_1",
-                                    "GND"
+                                    "GND_gnd"
                                 ],
                                 "Cq_2": [
                                     "J1_2",
@@ -1014,7 +1014,7 @@ def test():
                                     "R1_1"
                                 ],
                                 "Cl_1": [
-                                    "GND"
+                                    "GND_gnd"
                                 ]
                             },
                             "label": "capacitor",
@@ -1064,10 +1064,6 @@ def test():
     # # {'transmon_alice': ['n1', 'GND'], 'readout_resonator': ['n2', 'GND']}
     # print(circuit_mvp.get_subsystem_map(ssDict, nodeT))
 
-
-
-
-    
     # print('new_capacitor_dict:', new_capacitor_dict)
 
 test()
