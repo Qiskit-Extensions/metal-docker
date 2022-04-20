@@ -165,7 +165,7 @@ def convert_netlist_to_maxwell(df):
 @app.route('/simulate', methods=['POST'])
 def simulate():
     req = request.get_json()
-    circuit_mvp = Circuit(req['Circuit Graph'])
+    circuit_mvp = Circuit(req['CircuitGraph'])
 
     nodeT = circuit_mvp.get_nodes()
     capacitance_graph = circuit_mvp.get_capacitance_graph(nodeT)
@@ -177,7 +177,7 @@ def simulate():
             new_capacitance_graph[node].append((connection_node, float(capacitance)))
 
     c_mats = []
-    nodes = new_capacitance_graph.keys()
+    nodes = ['n1', 'n2', 'GND']
     inp_keys_index = pd.Index(nodes)
     c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph), nodes))
     converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
@@ -197,7 +197,7 @@ def simulate():
             # If the node tuple is not a key in the junction list, remove the ground node, and set 
             # 'nodes' for the subsystem in subsystem_list to the remaining nodes
             if subsystem is not None:
-                subsystem_list[subsystem]['nodes'] = [list(nodes).remove('GND')]
+                subsystem_list[subsystem]['nodes'] = [n for n in nodes if n!='GND']
 
     subsystems = []
     for subsystem, subsystem_metadata in subsystem_list.items():
