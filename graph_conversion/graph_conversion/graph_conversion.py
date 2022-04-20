@@ -991,7 +991,7 @@ def test():
                                     "Cq_2"
                                 ],
                                 "Cc_2": [
-                                    "R1_1"
+                                    "Cl_2"
                                 ]
                             },
                             "label": "capacitor",
@@ -1010,8 +1010,7 @@ def test():
                         "Cl": {
                             "connections": {
                                 "Cl_2": [
-                                    "Cc_2",
-                                    "R1_1"
+                                    "Cc_2"
                                 ],
                                 "Cl_1": [
                                     "GND_gnd"
