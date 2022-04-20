@@ -178,26 +178,33 @@ def simulate():
     print('Circuit Graph:')
     pp.pp(circuit_graph)
 
-    new_circuit_graph = {}
+    not_hardcoded = False
 
-    for component_name, component_metadata in circuit_graph.items():
-        if component_metadata['component_type'] != 'composite_subsystem':
-            new_circuit_graph[component_name] = component_metadata
-            new_circuit_graph[component_name]['value'] = dict_to_float(component_metadata['value'])
-        else:
-            new_circuit_graph['capacitor_2'] = {}
-            new_circuit_graph['capacitor_2']['label'] = 'capacitor'
-            new_circuit_graph['capacitor_2']['component_type'] = 'capacitor'
-            new_circuit_graph['capacitor_2']['terminals'] = ['capacitor_2_1', 'capacitor_2_2']
-            new_circuit_graph['capacitor_2']['value'] = dict_to_float(component_metadata['value'])
-            new_circuit_graph['capacitor_2']['connections'] = {}
-            new_circuit_graph['capacitor_2']['connections']['capacitor_2_1'] = ['capacitor_1_2']
-            new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = []
-            new_circuit_graph['capacitor_2']['subsystem'] = component_metadata['subsystem']
+    if not_hardcoded:
+        new_circuit_graph = {}
 
-    new_circuit_graph['capacitor_1']['connections']['capacitor_1_2'] = ['capacitor_2_1']
-    new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = ['GND_gnd']
-    new_circuit_graph['josephson_junction_0']['value']['inductance'] = 10.0
+        # TODO: There can be composite subsystems where user uploads info, so first get info 
+        # from frontend for composite_subsystem
+        for component_name, component_metadata in circuit_graph.items():
+            if component_metadata['component_type'] != 'composite_subsystem':
+                new_circuit_graph[component_name] = component_metadata
+                new_circuit_graph[component_name]['value'] = dict_to_float(component_metadata['value'])
+            else:
+                new_circuit_graph['capacitor_2'] = {}
+                new_circuit_graph['capacitor_2']['label'] = 'capacitor'
+                new_circuit_graph['capacitor_2']['component_type'] = 'capacitor'
+                new_circuit_graph['capacitor_2']['terminals'] = ['capacitor_2_1', 'capacitor_2_2']
+                new_circuit_graph['capacitor_2']['value'] = dict_to_float(component_metadata['value'])
+                new_circuit_graph['capacitor_2']['connections'] = {}
+                new_circuit_graph['capacitor_2']['connections']['capacitor_2_1'] = ['capacitor_1_2']
+                new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = []
+                new_circuit_graph['capacitor_2']['subsystem'] = component_metadata['subsystem']
+
+        new_circuit_graph['capacitor_1']['connections']['capacitor_1_2'] = ['capacitor_2_1']
+        new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = ['GND_gnd']
+        new_circuit_graph['josephson_junction_0']['value']['inductance'] = 10.0
+    else:
+        new_circuit_graph = circuit_graph
 
     print('new_circuit_graph:')
     pp.pp(new_circuit_graph)
