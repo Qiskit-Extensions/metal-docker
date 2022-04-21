@@ -503,7 +503,6 @@ class Circuit:
     def populate_circuit_component_list(self):
         self._circuit_component_list = []
 
-
         for component_name, component_metadata in self._circuit_graph.items():
             if component_metadata['subsystem']:
                 subsystem = component_metadata['subsystem']['name']
