@@ -178,9 +178,11 @@ def simulate():
     print('Circuit Graph:')
     pp.pp(circuit_graph)
 
-    not_hardcoded = False
+    hardcoded = True
 
-    if not_hardcoded:
+    if hardcoded:
+        new_circuit_graph = circuit_graph
+    else:
         new_circuit_graph = {}
 
         # TODO: There can be composite subsystems where user uploads info, so first get info 
@@ -203,8 +205,7 @@ def simulate():
         new_circuit_graph['capacitor_1']['connections']['capacitor_1_2'] = ['capacitor_2_1']
         new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = ['GND_gnd']
         new_circuit_graph['josephson_junction_0']['value']['inductance'] = 10.0
-    else:
-        new_circuit_graph = circuit_graph
+
 
     print('new_circuit_graph:')
     pp.pp(new_circuit_graph)
@@ -229,7 +230,7 @@ def simulate():
 
     c_mats = []
     # nodes = new_capacitance_graph.keys()
-    nodes = ['n1', 'capacitor_2', 'GND_gnd']
+    nodes = ['n1', 'n2', 'GND_gnd']
     inp_keys_index = pd.Index(nodes)
     c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph), nodes))
     converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
