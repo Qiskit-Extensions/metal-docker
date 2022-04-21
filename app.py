@@ -165,7 +165,9 @@ def convert_netlist_to_maxwell(df):
 @app.route('/simulate', methods=['POST'])
 def simulate():
     req = request.get_json()
-    circuit_mvp = Circuit(req['Circuit Graph'])
+    circuit_graph = req['Circuit Graph']
+    pp.pp(circuit_graph)
+    circuit_mvp = Circuit(circuit_graph)
 
     nodeT = circuit_mvp.get_nodes()
     capacitance_graph = circuit_mvp.get_capacitance_graph(nodeT)
