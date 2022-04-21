@@ -612,7 +612,7 @@ class Circuit:
                         if con[0] != 'R' and con != 'GND_gnd':
                             conComp = self.get_component_from_terminal(con)
                             # if same label, add in the same list 
-                            if (comp.component_type == 'josephson junction') or (conComp.component_type == comp.component_type) or (conComp.component_type == 'josephson junction'):
+                            if (comp.component_type == 'josephson_junction') or (conComp.component_type == comp.component_type) or (conComp.component_type == 'josephson_junction'):
                                 # if same comp connected to both terminals
                                 if conComp in connected1:
                                     conInParallel.append(conComp)
@@ -633,7 +633,7 @@ class Circuit:
             hasJunction = False 
             junction = None
             for comp in con: 
-                if (comp.component_type == 'josephson junction'):
+                if (comp.component_type == 'josephson_junction'):
                     hasJunction = True
                     junction = comp
 
@@ -645,7 +645,7 @@ class Circuit:
                 for comp in con:
                     if (comp.name != junction.name):
                         # add capacitance and inductance in parallel
-                        if comp.component_type == 'josephson junction':
+                        if comp.component_type == 'josephson_junction':
                             cap = comp.value['capacitance']
                             indu = comp.value['inductance']
                             newCap += cap
@@ -808,7 +808,7 @@ class Circuit:
                 comp = self.get_component_from_name(nodeTups[tup][1])
                 compSS = comp.subsystem
                 # if has value of inductance and is in current subSys
-                if comp.component_type == 'josephson junction' and subSys == compSS:
+                if comp.component_type == 'josephson_junction' and subSys == compSS:
                     junctionDict[tup] = comp.name
             if junctionDict != {}:
                 junctionList.append(junctionDict)
