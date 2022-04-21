@@ -576,7 +576,7 @@ class Circuit:
         conSet = set()
         conSet.update(cons)
         conSet.add(term)
-        conSet.discard('GND')
+        conSet.discard('GND_gnd')
         # nodeDict's key is frozenset
         return frozenset(conSet)
 
@@ -609,7 +609,7 @@ class Circuit:
                 for term in comp.connections:
                     for con in comp.connections[term]:
                         # skip resonator and ground node 
-                        if con[0] != 'R' and con != 'GND':
+                        if con[0] != 'R' and con != 'GND_gnd':
                             conComp = self.get_component_from_terminal(con)
                             # if same label, add in the same list 
                             if (comp.component_type == 'josephson junction') or (conComp.component_type == comp.component_type) or (conComp.component_type == 'josephson junction'):
@@ -720,10 +720,10 @@ class Circuit:
             for t in comp.terminals:
                 connections = comp.connections[t]
                 
-                if 'GND' in connections: 
+                if 'GND_gnd' in connections: 
                     groundSet.update(connections)
                     groundSet.add(t)
-                    groundSet.discard('GND')
+                    groundSet.discard('GND_gnd')
                 else: 
                     fSet = self.get_set(t, connections)
                     # check if node already exist
@@ -741,7 +741,7 @@ class Circuit:
                         and (not self.node_in_list(node, nodeName, nodeTups))):
                         nodeTups[(node, nodeName)] = (val, comp.name)
                     elif otherT in groundSet:
-                        nodeTups[(nodeName, 'GND')] = (val, comp.name)
+                        nodeTups[(nodeName, 'GND_gnd')] = (val, comp.name)
 
         return nodeTups
 
@@ -937,7 +937,7 @@ def test():
                         "J1": {
                             "connections": {
                                 "J1_1": [
-                                    "GND",
+                                    "GND_gnd",
                                     "Cq_1"
                                 ],
                                 "J1_2": [
@@ -963,7 +963,7 @@ def test():
                             "connections": {
                                 "Cq_1": [
                                     "J1_1",
-                                    "GND"
+                                    "GND_gnd"
                                 ],
                                 "Cq_2": [
                                     "J1_2",
@@ -1014,7 +1014,7 @@ def test():
                                     "R1_1"
                                 ],
                                 "Cl_1": [
-                                    "GND"
+                                    "GND_gnd"
                                 ]
                             },
                             "label": "capacitor",
@@ -1042,32 +1042,5 @@ def test():
     nodeT = circuit_mvp.get_nodes()
     # {('n1', 'GND'): ('7F_10H', 'J1'), ('n1', 'n2'): ('5F', 'Cc'), ('n2', 'GND'): ('10F', 'Cl')}
     print(nodeT)
-
-    # print('Capacitance_Graph::')
-    # # {'n1': {'GND': 7, 'n2': 5}, 'n2': {'GND': 10}}
-    # print(circuit_mvp.get_capacitance_graph(nodeT))
-
-    # print('Ind_List::')
-    # # [{('n1', 'GND'): 10}]
-    # print(circuit_mvp.get_inductor_list(nodeT))
-
-    # print('Junction_List::')
-    # # [{('n1', 'GND'): 'J1'}]
-    # print(circuit_mvp.get_junction_list(nodeT))
-
-    # print('Subsystem Dictionary::')
-    # # {'transmon_alice': ['J1'], 'readout_resonator': ['Cl']}
-    # print(circuit_mvp.get_component_name_subsystem())
-
-    # ssDict = circuit_mvp.get_component_name_subsystem()
-    # print('Subsystem Map::')
-    # # {'transmon_alice': ['n1', 'GND'], 'readout_resonator': ['n2', 'GND']}
-    # print(circuit_mvp.get_subsystem_map(ssDict, nodeT))
-
-
-
-
-    
-    # print('new_capacitor_dict:', new_capacitor_dict)
 
 test()
