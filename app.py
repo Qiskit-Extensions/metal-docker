@@ -268,7 +268,7 @@ def simulate():
         subsystems=subsystems,
         cells=cell_list,
         grd_node='GND_gnd',
-        nodes_force_keep=['capacitor_2']
+        nodes_force_keep=['n2']
     )
     
     hilbertspace = composite_sys.add_interaction()
