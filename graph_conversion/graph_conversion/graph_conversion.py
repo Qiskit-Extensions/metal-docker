@@ -505,7 +505,7 @@ class Circuit:
 
         for component_name, component_metadata in self._circuit_graph.items():
             if component_metadata['subsystem']:
-                subsystem = component_metadata['subsystem']['name']
+                subsystem = component_metadata['subsystem']
             else:
                 subsystem = None
 
@@ -715,9 +715,21 @@ class Circuit:
         ind = 0
         groundSet = set()
         for comp in self._circuit_component_list:
+            # Reorder terminals so that if a terminal is connected to ground, it is listed in the terminals first.
+            # This is necessary as a bug fix here for the time being
+            new_terminals = []
+            for t in comp.terminals:
+                connections = comp.connections[t]
+                if 'GND_gnd' in connections:
+                    new_terminals.append(t)
+                    new_terminals.append(self.get_other_terminal_same_component(t))
+
+            if new_terminals == []:
+                new_terminals = comp.terminals
+
             # for each terminal,
             nodeName = 'n' + str(ind)
-            for t in comp.terminals:
+            for t in new_terminals:
                 connections = comp.connections[t]
                 
                 if 'GND_gnd' in connections: 
