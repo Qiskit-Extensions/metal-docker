@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from qiskit_metal.analyses.quantization.lumped_capacitive import load_q3d_capacitance_matrix
 from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
@@ -180,6 +180,9 @@ def simulate():
 
     hardcoded = False
 
+    capacitors = [n for n in req['Circuit Graph'] if any(xs in n for xs in ['capacitor'])]
+    josephson_junctions = [n for n in req['Circuit Graph'] if any(xs in n for xs in ['josephson_junction'])]
+
     if hardcoded:
         new_circuit_graph = circuit_graph
     else:
@@ -188,7 +191,7 @@ def simulate():
         # TODO: There can be composite subsystems where user uploads info, so first get info 
         # from frontend for composite_subsystem
         for component_name, component_metadata in circuit_graph.items():
-            if component_metadata['component_type'] != 'composite_subsystem':
+            if component_metadata['component_type'] != 'left_side_loaded_tl_resonator':
                 new_circuit_graph[component_name] = component_metadata
                 new_circuit_graph[component_name]['value'] = dict_to_float(component_metadata['value'])
             else:
@@ -198,13 +201,13 @@ def simulate():
                 new_circuit_graph['capacitor_2']['terminals'] = ['capacitor_2_1', 'capacitor_2_2']
                 new_circuit_graph['capacitor_2']['value'] = dict_to_float(component_metadata['value'])
                 new_circuit_graph['capacitor_2']['connections'] = {}
-                new_circuit_graph['capacitor_2']['connections']['capacitor_2_1'] = ['capacitor_1_2']
+                new_circuit_graph['capacitor_2']['connections']['capacitor_2_1'] = [capacitors[1]+'_2']
                 new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = []
                 new_circuit_graph['capacitor_2']['subsystem'] = component_metadata['subsystem']
 
-        new_circuit_graph['capacitor_1']['connections']['capacitor_1_2'] = ['capacitor_2_1']
+        new_circuit_graph[capacitors[1]]['connections'][capacitors[1]+'_2'] = ['capacitor_2_1']
         new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = ['GND_gnd']
-        new_circuit_graph['josephson_junction_0']['value']['inductance'] = 10.0
+        new_circuit_graph[josephson_junctions[0]]['value']['inductance'] = 10.0
 
 
     print('new_circuit_graph:')
@@ -273,7 +276,14 @@ def simulate():
     
     hilbertspace = composite_sys.add_interaction()
     hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace, evals_count=30)
-    hamiltonian_results['chi_in_MHz'] = hamiltonian_results['chi_in_MHz'].to_dataframe().to_dict()
 
-    return hamiltonian_results
+    sim_results = {}
+    sim_results['fQ_in_Ghz'] = hamiltonian_results['fQ_in_Ghz']
+
+    res_df = hamiltonian_results['chi_in_MHz'].to_dataframe()
+
+    sim_results['chi_in_MHz'] = json.loads(res_df.to_json(orient='records'))
+    sim_results = jsonify(sim_results)
+
+    return sim_results
     # return '0'
