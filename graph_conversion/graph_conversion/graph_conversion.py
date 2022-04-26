@@ -715,9 +715,21 @@ class Circuit:
         ind = 0
         groundSet = set()
         for comp in self._circuit_component_list:
+            # Reorder terminals so that if a terminal is connected to ground, it is listed in the terminals first.
+            # This is necessary as a bug fix here for the time being
+            new_terminals = []
+            for t in comp.terminals:
+                connections = comp.connections[t]
+                if 'GND_gnd' in connections:
+                    new_terminals.append(t)
+                    new_terminals.append(self.get_other_terminal_same_component(t))
+
+            if new_terminals == []:
+                new_terminals = comp.terminals
+
             # for each terminal,
             nodeName = 'n' + str(ind)
-            for t in comp.terminals:
+            for t in new_terminals:
                 connections = comp.connections[t]
                 
                 if 'GND_gnd' in connections: 
@@ -918,20 +930,6 @@ def test():
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     ##                MVP Circuit                 ##
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    
-
-    # J1 = CircuitComponent('J1', 'junction', ('J1_1', 'J1_2'), 
-    # {'capacitance': 2, 'inductance': 10}, {'J1_1': ['GND', 'Cq_1'], 'J1_2': ['Cq_2', 'Cc_1']}, 
-    # 'transmon_alice')
-
-    # Cq = CircuitComponent('Cq', 'capacitor', ('Cq_1', 'Cq_2'), 
-    # {'capacitance': 5, 'inductance': 0}, {'Cq_1': ['J1_1', 'GND'], 'Cq_2': ['J1_2', 'Cc_1']}, 
-    # 'transmon_alice') 
-    # Cc = CircuitComponent('Cc', 'capacitor', ('Cc_1', 'Cc_2'), 
-    # {'capacitance': 5, 'inductance': 0}, {'Cc_1': ['J1_2', 'Cq_2'], 'Cc_2': ['R1_1', 'Cl_2']}, 
-    # '') 
-    # Cl = CircuitComponent('Cl', 'capacitor', ('Cl_1', 'Cl_2'), 
-    # {'capacitance': 10, 'inductance': 0}, {'Cl_1': ['GND'], 'Cl_2': ['R1_1', 'Cc_2']}, 
-    # 'readout_resonator') 
     
     circuit_graph = {
                         "J1": {
@@ -1041,28 +1039,5 @@ def test():
     nodeT = circuit_mvp.get_nodes()
     # {('n1', 'GND'): ('7F_10H', 'J1'), ('n1', 'n2'): ('5F', 'Cc'), ('n2', 'GND'): ('10F', 'Cl')}
     print(nodeT)
-
-    # print('Capacitance_Graph::')
-    # # {'n1': {'GND': 7, 'n2': 5}, 'n2': {'GND': 10}}
-    # print(circuit_mvp.get_capacitance_graph(nodeT))
-
-    # print('Ind_List::')
-    # # [{('n1', 'GND'): 10}]
-    # print(circuit_mvp.get_inductor_list(nodeT))
-
-    # print('Junction_List::')
-    # # [{('n1', 'GND'): 'J1'}]
-    # print(circuit_mvp.get_junction_list(nodeT))
-
-    # print('Subsystem Dictionary::')
-    # # {'transmon_alice': ['J1'], 'readout_resonator': ['Cl']}
-    # print(circuit_mvp.get_component_name_subsystem())
-
-    # ssDict = circuit_mvp.get_component_name_subsystem()
-    # print('Subsystem Map::')
-    # # {'transmon_alice': ['n1', 'GND'], 'readout_resonator': ['n2', 'GND']}
-    # print(circuit_mvp.get_subsystem_map(ssDict, nodeT))
-
-    # print('new_capacitor_dict:', new_capacitor_dict)
 
 test()

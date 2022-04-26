@@ -178,7 +178,7 @@ def simulate():
     print('Circuit Graph:')
     pp.pp(circuit_graph)
 
-    hardcoded = True
+    hardcoded = False
 
     if hardcoded:
         new_circuit_graph = circuit_graph
