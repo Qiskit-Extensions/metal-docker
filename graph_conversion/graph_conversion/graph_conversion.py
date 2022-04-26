@@ -505,7 +505,7 @@ class Circuit:
 
         for component_name, component_metadata in self._circuit_graph.items():
             if component_metadata['subsystem']:
-                subsystem = component_metadata['subsystem']['name']
+                subsystem = component_metadata['subsystem']
             else:
                 subsystem = None
 
