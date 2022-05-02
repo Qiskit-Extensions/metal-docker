@@ -176,10 +176,12 @@ def add_subsystem_components(circuit_graph):
     timestamp = str(int(time()))
     capacitor_name = 'capacitor_' + timestamp
 
+    subsystem_types = ['left_side_loaded_tl_resonator', 'right_side_loaded_tl_resonator']
+
     # TODO: There can be composite subsystems where user uploads info, so first get info 
     # from frontend for composite_subsystem
     for component_name, component_metadata in circuit_graph.items():
-        if component_metadata['component_type'] != 'left_side_loaded_tl_resonator':
+        if component_metadata['component_type'] not in subsystem_types:
             new_circuit_graph[component_name] = component_metadata
             new_circuit_graph[component_name]['value'] = dict_to_float(component_metadata['value'])
         else:
@@ -230,6 +232,15 @@ def get_capacitor_nodes(capacitance_list):
             nodes.append(value[0])
 
     return set(nodes)
+
+
+def get_keep_nodes(subsystems):
+    keep_nodes = []
+    for subsystem in subsystems:
+        if subsystem.sys_type == 'TL_RESONATOR':
+            keep_nodes.extend(subsystem.nodes)
+
+    return keep_nodes
 
 
 @app.route('/simulate', methods=['POST'])
@@ -289,11 +300,13 @@ def simulate():
                             jj_dict=junction_list[0],
                             cj_dict={})))
     
+    nodes_force_keep = get_keep_nodes(subsystems)
+
     composite_sys = CompositeSystem(
         subsystems=subsystems,
         cells=cell_list,
         grd_node='GND_gnd',
-        nodes_force_keep=['n2']
+        nodes_force_keep=nodes_force_keep
     )
     
     hilbertspace = composite_sys.add_interaction()
