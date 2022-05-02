@@ -11,6 +11,7 @@ import json
 from ast import literal_eval
 from graph_conversion.graph_conversion.graph_conversion import CircuitComponent, Circuit, Subsystem2
 import pprint as pp
+from time import time
 app = Flask(__name__)
 CORS(app)
 
@@ -170,6 +171,34 @@ def dict_to_float(dictionary):
     return new_dictionary
 
 
+def add_subsystem_components(circuit_graph):
+    new_circuit_graph = {}
+    timestamp = str(int(time()))
+    capacitor_name = 'capacitor_' + timestamp
+
+    # TODO: There can be composite subsystems where user uploads info, so first get info 
+    # from frontend for composite_subsystem
+    for component_name, component_metadata in circuit_graph.items():
+        if component_metadata['component_type'] != 'left_side_loaded_tl_resonator':
+            new_circuit_graph[component_name] = component_metadata
+            new_circuit_graph[component_name]['value'] = dict_to_float(component_metadata['value'])
+        else:
+            new_circuit_graph[capacitor_name] = {}
+            connected_terminal = circuit_graph[component_name]['connections'][component_name + '_1']
+            new_circuit_graph[capacitor_name]['label'] = 'capacitor'
+            new_circuit_graph[capacitor_name]['component_type'] = 'capacitor'
+            new_circuit_graph[capacitor_name]['terminals'] = [capacitor_name + '_1', capacitor_name + '_2']
+            new_circuit_graph[capacitor_name]['value'] = dict_to_float(component_metadata['value'])
+            new_circuit_graph[capacitor_name]['connections'] = {}
+            new_circuit_graph[capacitor_name]['connections'][capacitor_name + '_1'] = connected_terminal
+            new_circuit_graph[capacitor_name]['connections'][capacitor_name + '_2'] = []
+            new_circuit_graph[capacitor_name]['subsystem'] = component_metadata['subsystem']
+            new_circuit_graph[connected_terminal[0][:-2]]['connections'][connected_terminal[0]] = [capacitor_name + '_1']
+            new_circuit_graph[capacitor_name]['connections'][capacitor_name + '_2'] = ['GND_gnd']
+
+    return new_circuit_graph
+
+
 def rename_ground_nodes(new_circuit_graph):
     circuit_graph_grounds = {}
     for component, component_metadata in new_circuit_graph.items():
@@ -193,60 +222,31 @@ def rename_ground_nodes(new_circuit_graph):
     return circuit_graph_grounds
 
 
+def get_capacitor_nodes(capacitance_list):
+    nodes = []
+    for key, values in capacitance_list.items():
+        nodes.append(key)
+        for value in values:
+            nodes.append(value[0])
+
+    return set(nodes)
+
+
 @app.route('/simulate', methods=['POST'])
 def simulate():
     req = request.get_json()
     circuit_graph = req['Circuit Graph']
 
-    capacitors = [n for n in req['Circuit Graph'] if any(xs in n for xs in ['capacitor'])]
-    josephson_junctions = [n for n in req['Circuit Graph'] if any(xs in n for xs in ['josephson_junction'])]
-
     print('Circuit Graph:')
     pp.pp(circuit_graph)
 
-    new_circuit_graph = {}
-
-    # TODO: There can be composite subsystems where user uploads info, so first get info 
-    # from frontend for composite_subsystem
-    for component_name, component_metadata in circuit_graph.items():
-        if component_metadata['component_type'] != 'left_side_loaded_tl_resonator':
-            new_circuit_graph[component_name] = component_metadata
-            new_circuit_graph[component_name]['value'] = dict_to_float(component_metadata['value'])
-        else:
-            new_circuit_graph['capacitor_2'] = {}
-            new_circuit_graph['capacitor_2']['label'] = 'capacitor'
-            new_circuit_graph['capacitor_2']['component_type'] = 'capacitor'
-            new_circuit_graph['capacitor_2']['terminals'] = ['capacitor_2_1', 'capacitor_2_2']
-            new_circuit_graph['capacitor_2']['value'] = dict_to_float(component_metadata['value'])
-            new_circuit_graph['capacitor_2']['connections'] = {}
-            new_circuit_graph['capacitor_2']['connections']['capacitor_2_1'] = [capacitors[1]+'_2']
-            new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = []
-            new_circuit_graph['capacitor_2']['subsystem'] = component_metadata['subsystem']
-
-    new_circuit_graph[capacitors[1]]['connections'][capacitors[1]+'_2'] = ['capacitor_2_1']
-    new_circuit_graph['capacitor_2']['connections']['capacitor_2_2'] = ['GND_gnd']
-    new_circuit_graph[josephson_junctions[0]]['value']['inductance'] = 10.0
-
-
-    print('new_circuit_graph:')
-    pp.pp(new_circuit_graph)
-
+    new_circuit_graph = add_subsystem_components(circuit_graph)
     circuit_graph_grounds = rename_ground_nodes(new_circuit_graph)
-
-    print('Circuit Graph with Grounds:')
-    pp.pp(circuit_graph_grounds)
-
-    print('Subsystems:')
-    pp.pp(req['Subsystems'])
     
     circuit_mvp = Circuit(circuit_graph_grounds)
 
     nodeT = circuit_mvp.get_nodes()
     capacitance_graph = circuit_mvp.get_capacitance_graph(nodeT)
-
-    # Process capacitance graph to include self-capacitance for ground
-    # for node,  capacitance in
-    # {'n1': {'n1': 0, 'GND': 7, 'n2': 5}, 'n2':{'n2': 0, 'GND': 10}, 'GND': {'GND': 0}}
 
     new_capacitance_graph = {} #restructure data to work with LOM code
     for node, connections in capacitance_graph.items():
@@ -255,8 +255,7 @@ def simulate():
             new_capacitance_graph[node].append((connection_node, float(capacitance)))
 
     c_mats = []
-    # nodes = new_capacitance_graph.keys()
-    nodes = ['n1', 'n2', 'GND_gnd']
+    nodes = get_capacitor_nodes(new_capacitance_graph)
     inp_keys_index = pd.Index(nodes)
     c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph), nodes))
     converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
