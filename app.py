@@ -170,6 +170,29 @@ def dict_to_float(dictionary):
     return new_dictionary
 
 
+def rename_ground_nodes(new_circuit_graph):
+    circuit_graph_grounds = {}
+    for component, component_metadata in new_circuit_graph.items():
+        if 'ground' in component:
+            # Do we need a deep copy here?
+            circuit_graph_grounds['GND'] = component_metadata.copy()
+            circuit_graph_grounds['GND']['terminals'] = ['GND_gnd']
+            circuit_graph_grounds['GND']['connections'] = {}
+            circuit_graph_grounds['GND']['connections']['GND_gnd'] = component_metadata['connections'][component+'_gnd']
+        else:
+            circuit_graph_grounds[component] = component_metadata
+            for terminal, connections in component_metadata['connections'].items():
+                new_connections = []
+                for connection in connections:
+                    if 'ground' in connection:
+                        new_connections.append('GND_gnd')
+                    else:
+                        new_connections.append(connection)
+                circuit_graph_grounds[component]['connections'][terminal] = new_connections
+
+    return circuit_graph_grounds
+
+
 @app.route('/simulate', methods=['POST'])
 def simulate():
     req = request.get_json()
@@ -208,24 +231,7 @@ def simulate():
     print('new_circuit_graph:')
     pp.pp(new_circuit_graph)
 
-    circuit_graph_grounds = {}
-    for component, component_metadata in new_circuit_graph.items():
-        if 'ground' in component:
-            # Do we need a deep copy here?
-            circuit_graph_grounds['GND'] = component_metadata.copy()
-            circuit_graph_grounds['GND']['terminals'] = ['GND_gnd']
-            circuit_graph_grounds['GND']['connections'] = {}
-            circuit_graph_grounds['GND']['connections']['GND_gnd'] = component_metadata['connections'][component+'_gnd']
-        else:
-            circuit_graph_grounds[component] = component_metadata
-            for terminal, connections in component_metadata['connections'].items():
-                new_connections = []
-                for connection in connections:
-                    if 'ground' in connection:
-                        new_connections.append('GND_gnd')
-                    else:
-                        new_connections.append(connection)
-                circuit_graph_grounds[component]['connections'][terminal] = new_connections
+    circuit_graph_grounds = rename_ground_nodes(new_circuit_graph)
 
     print('Circuit Graph with Grounds:')
     pp.pp(circuit_graph_grounds)
