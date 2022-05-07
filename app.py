@@ -12,6 +12,9 @@ from ast import literal_eval
 from graph_conversion.graph_conversion.graph_conversion import CircuitComponent, Circuit, Subsystem2
 import pprint as pp
 from time import time
+
+from jupyter import generate_notebook
+
 app = Flask(__name__)
 CORS(app)
 
@@ -167,7 +170,7 @@ def dict_to_float(dictionary):
     new_dictionary = {}
     for key, value in dictionary.items():
         new_dictionary[key] = float(value)
-    
+
     return new_dictionary
 
 
@@ -176,27 +179,41 @@ def add_subsystem_components(circuit_graph):
     timestamp = str(int(time()))
     capacitor_name = 'capacitor_' + timestamp
 
-    subsystem_types = ['left_side_loaded_tl_resonator', 'right_side_loaded_tl_resonator']
+    subsystem_types = [
+        'left_side_loaded_tl_resonator', 'right_side_loaded_tl_resonator'
+    ]
 
-    # TODO: There can be composite subsystems where user uploads info, so first get info 
+    # TODO: There can be composite subsystems where user uploads info, so first get info
     # from frontend for composite_subsystem
     for component_name, component_metadata in circuit_graph.items():
         if component_metadata['component_type'] not in subsystem_types:
             new_circuit_graph[component_name] = component_metadata
-            new_circuit_graph[component_name]['value'] = dict_to_float(component_metadata['value'])
+            new_circuit_graph[component_name]['value'] = dict_to_float(
+                component_metadata['value'])
         else:
             new_circuit_graph[capacitor_name] = {}
-            connected_terminal = circuit_graph[component_name]['connections'][component_name + '_1']
+            connected_terminal = circuit_graph[component_name]['connections'][
+                component_name + '_1']
             new_circuit_graph[capacitor_name]['label'] = 'capacitor'
             new_circuit_graph[capacitor_name]['component_type'] = 'capacitor'
-            new_circuit_graph[capacitor_name]['terminals'] = [capacitor_name + '_1', capacitor_name + '_2']
-            new_circuit_graph[capacitor_name]['value'] = dict_to_float(component_metadata['value'])
+            new_circuit_graph[capacitor_name]['terminals'] = [
+                capacitor_name + '_1', capacitor_name + '_2'
+            ]
+            new_circuit_graph[capacitor_name]['value'] = dict_to_float(
+                component_metadata['value'])
             new_circuit_graph[capacitor_name]['connections'] = {}
-            new_circuit_graph[capacitor_name]['connections'][capacitor_name + '_1'] = connected_terminal
-            new_circuit_graph[capacitor_name]['connections'][capacitor_name + '_2'] = []
-            new_circuit_graph[capacitor_name]['subsystem'] = component_metadata['subsystem']
-            new_circuit_graph[connected_terminal[0][:-2]]['connections'][connected_terminal[0]] = [capacitor_name + '_1']
-            new_circuit_graph[capacitor_name]['connections'][capacitor_name + '_2'] = ['GND_gnd']
+            new_circuit_graph[capacitor_name]['connections'][
+                capacitor_name + '_1'] = connected_terminal
+            new_circuit_graph[capacitor_name]['connections'][capacitor_name +
+                                                             '_2'] = []
+            new_circuit_graph[capacitor_name][
+                'subsystem'] = component_metadata['subsystem']
+            new_circuit_graph[connected_terminal[0][:-2]]['connections'][
+                connected_terminal[0]] = [capacitor_name + '_1']
+            new_circuit_graph[capacitor_name]['connections'][capacitor_name +
+                                                             '_2'] = [
+                                                                 'GND_gnd'
+                                                             ]
 
     return new_circuit_graph
 
@@ -209,17 +226,21 @@ def rename_ground_nodes(new_circuit_graph):
             circuit_graph_grounds['GND'] = component_metadata.copy()
             circuit_graph_grounds['GND']['terminals'] = ['GND_gnd']
             circuit_graph_grounds['GND']['connections'] = {}
-            circuit_graph_grounds['GND']['connections']['GND_gnd'] = component_metadata['connections'][component+'_gnd']
+            circuit_graph_grounds['GND']['connections'][
+                'GND_gnd'] = component_metadata['connections'][component +
+                                                               '_gnd']
         else:
             circuit_graph_grounds[component] = component_metadata
-            for terminal, connections in component_metadata['connections'].items():
+            for terminal, connections in component_metadata[
+                    'connections'].items():
                 new_connections = []
                 for connection in connections:
                     if 'ground' in connection:
                         new_connections.append('GND_gnd')
                     else:
                         new_connections.append(connection)
-                circuit_graph_grounds[component]['connections'][terminal] = new_connections
+                circuit_graph_grounds[component]['connections'][
+                    terminal] = new_connections
 
     return circuit_graph_grounds
 
@@ -253,66 +274,80 @@ def simulate():
 
     new_circuit_graph = add_subsystem_components(circuit_graph)
     circuit_graph_grounds = rename_ground_nodes(new_circuit_graph)
-    
+
     circuit_mvp = Circuit(circuit_graph_grounds)
 
     nodeT = circuit_mvp.get_nodes()
     capacitance_graph = circuit_mvp.get_capacitance_graph(nodeT)
 
-    new_capacitance_graph = {} #restructure data to work with LOM code
+    new_capacitance_graph = {}  #restructure data to work with LOM code
     for node, connections in capacitance_graph.items():
         new_capacitance_graph[node] = []
         for connection_node, capacitance in connections.items():
-            new_capacitance_graph[node].append((connection_node, float(capacitance)))
+            new_capacitance_graph[node].append(
+                (connection_node, float(capacitance)))
 
     c_mats = []
     nodes = get_capacitor_nodes(new_capacitance_graph)
     inp_keys_index = pd.Index(nodes)
-    c_mats.append(_make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph), nodes))
+    c_mats.append(
+        _make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph),
+                      nodes))
     converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
 
     inductor_list = circuit_mvp.get_inductor_list(nodeT)
     junction_list = circuit_mvp.get_junction_list(nodeT)
     component_name_subsystem = circuit_mvp.get_component_name_subsystem()
-    subsystem_map = circuit_mvp.get_subsystem_map(component_name_subsystem, nodeT)
+    subsystem_map = circuit_mvp.get_subsystem_map(component_name_subsystem,
+                                                  nodeT)
 
     subsystem_list = req['Subsystems']
 
     # Check subsystem_map to see if the pair of nodes is in the junction list and replace if it is
     for subsystem, nodes in subsystem_map.items():
         if tuple(nodes) in junction_list[0].keys():
-            subsystem_list[subsystem]['nodes'] = [junction_list[0][tuple(nodes)]]
+            subsystem_list[subsystem]['nodes'] = [
+                junction_list[0][tuple(nodes)]
+            ]
         else:
-            # If the node tuple is not a key in the junction list, remove the ground node, and set 
+            # If the node tuple is not a key in the junction list, remove the ground node, and set
             # 'nodes' for the subsystem in subsystem_list to the remaining nodes
             if subsystem is not None:
-                subsystem_list[subsystem]['nodes'] = [n for n in nodes if n!='GND_gnd']
+                subsystem_list[subsystem]['nodes'] = [
+                    n for n in nodes if n != 'GND_gnd'
+                ]
 
     subsystems = []
     for subsystem, subsystem_metadata in subsystem_list.items():
-        subsystems.append(Subsystem(name=subsystem, sys_type=subsystem_metadata['subsystem_type'],
-                                    nodes=subsystem_metadata['nodes'], q_opts=subsystem_metadata.get('options', None)))
+        subsystems.append(
+            Subsystem(name=subsystem,
+                      sys_type=subsystem_metadata['subsystem_type'],
+                      nodes=subsystem_metadata['nodes'],
+                      q_opts=subsystem_metadata.get('options', None)))
 
     cell_list = []
-    cell_list.append(Cell(dict(node_rename={},
-                            cap_mat=converted_capacitance,
-                            ind_dict=inductor_list[0],
-                            jj_dict=junction_list[0],
-                            cj_dict={})))
-    
+    cell_list.append(
+        Cell(
+            dict(node_rename={},
+                 cap_mat=converted_capacitance,
+                 ind_dict=inductor_list[0],
+                 jj_dict=junction_list[0],
+                 cj_dict={})))
+
     nodes_force_keep = get_keep_nodes(subsystems)
 
-    composite_sys = CompositeSystem(
-        subsystems=subsystems,
-        cells=cell_list,
-        grd_node='GND_gnd',
-        nodes_force_keep=nodes_force_keep
-    )
-    
-    hilbertspace = composite_sys.add_interaction()
-    hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace, evals_count=30)
+    composite_sys = CompositeSystem(subsystems=subsystems,
+                                    cells=cell_list,
+                                    grd_node='GND_gnd',
+                                    nodes_force_keep=nodes_force_keep)
 
+    hilbertspace = composite_sys.add_interaction()
+    hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace,
+                                                            evals_count=30)
+
+    notebook = generate_notebook(composite_sys)
     sim_results = {}
+    sim_results['notebook'] = notebook
     sim_results['fQ_in_Ghz'] = hamiltonian_results['fQ_in_Ghz']
 
     res_df = hamiltonian_results['chi_in_MHz'].to_dataframe()
