@@ -3,7 +3,6 @@
 # # arbitrary class for each component in the quantum circuit
 # # TODO: Turn this into a module
 
-
 # class CircuitComponent(object):
 #     def __init__(self, name, component_type, terminals, value, connections, subsystem=None):
 #         """
@@ -39,7 +38,6 @@
 #             if term is not terminal:
 #                 return term
 
-
 # class Circuit(object):
 #     def __init__(self, circuit_graph):
 #         """
@@ -60,7 +58,6 @@
 
 #     def populate_circuit_component_list(self):
 #         self._circuit_component_list = []
-
 
 #         for component_name, component_metadata in self._circuit_graph.items():
 #             if component_metadata['subsystem']:
@@ -89,114 +86,111 @@
 #             # print('connections:', component.connections)
 #             pass
 
-
-
 # def test():
-    # circuit_graph = {
-    #                     "J1": {
-    #                         "connections": {
-    #                             "J1_1": [
-    #                                 "GND",
-    #                                 "Cq_1"
-    #                             ],
-    #                             "J1_2": [
-    #                                 "Cq_2",
-    #                                 "Cc_1"
-    #                             ]
-    #                         },
-    #                         "label": "josephson_junction",
-    #                         "terminals": [
-    #                             "J1_1",
-    #                             "J1_2"
-    #                         ],
-    #                         "component_type": "josephson_junction",
-    #                         "value": {
-    #                             "capacitance": 2,
-    #                             "inductance": 10
-    #                         },
-    #                         "subsystem": {
-    #                             "name": "transmon_alice"
-    #                         }
-    #                     },
-    #                     "Cq": {
-    #                         "connections": {
-    #                             "Cq_1": [
-    #                                 "J1_1",
-    #                                 "GND"
-    #                             ],
-    #                             "Cq_2": [
-    #                                 "J1_2",
-    #                                 "Cc_1"
-    #                             ]
-    #                         },
-    #                         "label": "capacitor",
-    #                         "terminals": [
-    #                             "Cq_1",
-    #                             "Cq_2"
-    #                         ],
-    #                         "component_type": "capacitor",
-    #                         "value": {
-    #                             "capacitance": 5,
-    #                             "inductance": 0
-    #                         },
-    #                         "subsystem": {
-    #                             "name": "transmon_alice",
-    #                         }
-    #                     },
-    #                     "Cc": {
-    #                         "connections": {
-    #                             "Cc_1": [
-    #                                 "J1_2",
-    #                                 "Cq_2"
-    #                             ],
-    #                             "Cc_2": [
-    #                                 "R1_1"
-    #                             ]
-    #                         },
-    #                         "label": "capacitor",
-    #                         "terminals": [
-    #                             "Cc_1",
-    #                             "Cc_2"
-    #                         ],
-    #                         "component_type": "capacitor",
-    #                         "value": {
-    #                             "capacitance": 5,
-    #                             "inductance": 0
-    #                         },
-    #                         "subsystem": {}
-    #                     },
-    #                     # Data structure for the subgraph of R1
-    #                     "Cl": {
-    #                         "connections": {
-    #                             "Cl_2": [
-    #                                 "Cc_2",
-    #                                 "R1_1"
-    #                             ],
-    #                             "Cl_1": [
-    #                                 "GND"
-    #                             ]
-    #                         },
-    #                         "label": "capacitor",
-    #                         "terminals": [
-    #                             "Cl_1",
-    #                             "Cl_2"
-    #                         ],
-    #                         "component_type": "capacitor",
-    #                         "value": {
-    #                             "capacitance": 10,
-    #                             "inductance": 0
-    #                         },
-    #                         "subsystem": {
-    #                             "name": "readout_resonator"
-    #                         }
-    #                     }
-    #                 }
-    
+# circuit_graph = {
+#                     "J1": {
+#                         "connections": {
+#                             "J1_1": [
+#                                 "GND",
+#                                 "Cq_1"
+#                             ],
+#                             "J1_2": [
+#                                 "Cq_2",
+#                                 "Cc_1"
+#                             ]
+#                         },
+#                         "label": "josephson_junction",
+#                         "terminals": [
+#                             "J1_1",
+#                             "J1_2"
+#                         ],
+#                         "component_type": "josephson_junction",
+#                         "value": {
+#                             "capacitance": 2,
+#                             "inductance": 10
+#                         },
+#                         "subsystem": {
+#                             "name": "transmon_alice"
+#                         }
+#                     },
+#                     "Cq": {
+#                         "connections": {
+#                             "Cq_1": [
+#                                 "J1_1",
+#                                 "GND"
+#                             ],
+#                             "Cq_2": [
+#                                 "J1_2",
+#                                 "Cc_1"
+#                             ]
+#                         },
+#                         "label": "capacitor",
+#                         "terminals": [
+#                             "Cq_1",
+#                             "Cq_2"
+#                         ],
+#                         "component_type": "capacitor",
+#                         "value": {
+#                             "capacitance": 5,
+#                             "inductance": 0
+#                         },
+#                         "subsystem": {
+#                             "name": "transmon_alice",
+#                         }
+#                     },
+#                     "Cc": {
+#                         "connections": {
+#                             "Cc_1": [
+#                                 "J1_2",
+#                                 "Cq_2"
+#                             ],
+#                             "Cc_2": [
+#                                 "R1_1"
+#                             ]
+#                         },
+#                         "label": "capacitor",
+#                         "terminals": [
+#                             "Cc_1",
+#                             "Cc_2"
+#                         ],
+#                         "component_type": "capacitor",
+#                         "value": {
+#                             "capacitance": 5,
+#                             "inductance": 0
+#                         },
+#                         "subsystem": {}
+#                     },
+#                     # Data structure for the subgraph of R1
+#                     "Cl": {
+#                         "connections": {
+#                             "Cl_2": [
+#                                 "Cc_2",
+#                                 "R1_1"
+#                             ],
+#                             "Cl_1": [
+#                                 "GND"
+#                             ]
+#                         },
+#                         "label": "capacitor",
+#                         "terminals": [
+#                             "Cl_1",
+#                             "Cl_2"
+#                         ],
+#                         "component_type": "capacitor",
+#                         "value": {
+#                             "capacitance": 10,
+#                             "inductance": 0
+#                         },
+#                         "subsystem": {
+#                             "name": "readout_resonator"
+#                         }
+#                     }
+#                 }
+
 #     circuit = Circuit(circuit_graph)
 #     circuit.process_circuit_graph()
 
 #     print('Testing!')
-
 
 # def test_2():
 #     cicuit_component_graph = {"J1": {
@@ -353,12 +347,12 @@
 #                         }
 #                     }
 
-#     circuit_component = CircuitComponent('J1', cicuit_component_graph['J1']['component_type'], 
-#     cicuit_component_graph['J1']['terminals'], cicuit_component_graph['J1']['value'], 
+#     circuit_component = CircuitComponent('J1', cicuit_component_graph['J1']['component_type'],
+#     cicuit_component_graph['J1']['terminals'], cicuit_component_graph['J1']['value'],
 #     cicuit_component_graph['J1']['connections'], cicuit_component_graph['J1']['subsystem'])
 
-#     circuit_component_2 = CircuitComponent('Cq', cicuit_component_graph_2['Cq']['component_type'], 
-#     cicuit_component_graph_2['Cq']['terminals'], cicuit_component_graph_2['Cq']['value'], 
+#     circuit_component_2 = CircuitComponent('Cq', cicuit_component_graph_2['Cq']['component_type'],
+#     cicuit_component_graph_2['Cq']['terminals'], cicuit_component_graph_2['Cq']['value'],
 #     cicuit_component_graph_2['Cq']['connections'], cicuit_component_graph_2['Cq']['subsystem'])
 
 #     circuit = Circuit(circuit_graph)
@@ -381,7 +375,7 @@
 #                 other_terminal = circuit_component_2.get_other_terminal(connection)
 #                 print('other_terminal:', other_terminal)
 #                 print('connections:', circuit_component_2.connections[other_terminal])
-#                 print('First component, other terminal:', 
+#                 print('First component, other terminal:',
 #                 circuit_component.get_other_terminal(terminal))
 #                 print('Parallel:', (circuit_component.get_other_terminal(terminal) in
 #                 circuit_component_2.connections[other_terminal]))
@@ -392,17 +386,22 @@
 
 #     component_groups = [['J1', 'Cq'], ['Cc'], ['Cl']]
 
-
 # # test()
 # test_2()
 
-# Quantum SPICE 
+# Quantum SPICE
 # Converts circuit information to capacitance & inductance graph
+
 
 # arbitrary class for each components in the quantum circuit
 class CircuitComponent(object):
-
-    def __init__(self, name, component_type, terminals, value, connections, subsystem=None):
+    def __init__(self,
+                 name,
+                 component_type,
+                 terminals,
+                 value,
+                 connections,
+                 subsystem=None):
         # name (string) -> e.g. C1, I2
         self._name = name
         # label (string) => e.g. capacitor, inductor
@@ -411,26 +410,26 @@ class CircuitComponent(object):
         self._terminals = terminals
         # value (string) => e.g. 4F, 15H
         self._value = value
-        # connection (dictionary w string key and string list value) 
+        # connection (dictionary w string key and string list value)
         # e.g. {C1_1: [C2_1, I1_2], C1_2: []}
-        # stores list of connections between 
+        # stores list of connections between
         # self.terminals (key) & other terminals (values)
         # no connection is shown by []
         self._connections = connections
-        self._subsystem = subsystem   
-    
+        self._subsystem = subsystem
+
     @property
     def name(self):
-        return self._name 
-    
+        return self._name
+
     @name.setter
     def name(self, new_name):
         self._name = new_name
 
     @property
     def component_type(self):
-        return self._component_type 
-    
+        return self._component_type
+
     @component_type.setter
     def component_type(self, new_type):
         self._component_type = new_type
@@ -438,7 +437,7 @@ class CircuitComponent(object):
     @property
     def terminals(self):
         return self._terminals
-    
+
     @terminals.setter
     def terminals(self, new_terminals):
         self._terminals = new_terminals
@@ -446,24 +445,24 @@ class CircuitComponent(object):
     @property
     def value(self):
         return self._value
-    
+
     @value.setter
     def value(self, new_value):
         self._value = new_value
-    
-    @property 
-    def connections(self):
-        return self._connections 
 
-    @connections.setter 
+    @property
+    def connections(self):
+        return self._connections
+
+    @connections.setter
     def connections(self, new_connections):
         self._connections = new_connections
 
-    @property 
+    @property
     def subsystem(self):
         return self._subsystem
 
-    @subsystem.setter 
+    @subsystem.setter
     def subsystem(self, new_subsystem):
         self._subsystem = new_subsystem
 
@@ -474,12 +473,12 @@ class Subsystem2:
 
     def __init__(self, name, sys_label, options, nodes):
         self._name = name
-        self._sys_label = sys_label 
+        self._sys_label = sys_label
         self._options = options
         self._components = []
         self._nodes = nodes
         # add circComp instance to circCompList
-        Subsystem2.subSystemMap.append(self)  
+        Subsystem2.subSystemMap.append(self)
 
 
 class Circuit:
@@ -510,17 +509,18 @@ class Circuit:
                 subsystem = None
 
             if component_name != 'GND':
-                circuit_component = CircuitComponent(component_name,
-                                                    component_metadata['component_type'],
-                                                    component_metadata['terminals'],
-                                                    component_metadata['value'],
-                                                    component_metadata['connections'],
-                                                    subsystem)
+                circuit_component = CircuitComponent(
+                    component_name, component_metadata['component_type'],
+                    component_metadata['terminals'],
+                    component_metadata['value'],
+                    component_metadata['connections'], subsystem)
                 self._circuit_component_list.append(circuit_component)
 
     def populate_component_terminals(self):
         for _, component_metadata in self._circuit_graph.items():
             self._component_terminals.extend(component_metadata['terminals'])
+
+
 # class Circuit(object):
 #     def __init__(self, circuit_component_list):
 #         """
@@ -537,11 +537,12 @@ class Circuit:
 #             CircuitComponent.__del__(comp)
 #         self._circuit_component_list = []
 
-    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ##              Helper Functions              ##
-    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+##              Helper Functions              ##
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    # return the circComp that has the input terminal
+# return the circComp that has the input terminal
+
     def get_component_from_terminal(self, terminal):
         """
         Return the CircuitComponent that has the give input terminal
@@ -549,18 +550,18 @@ class Circuit:
         for component in self._circuit_component_list:
             if terminal in component.terminals:
                 return component
-        raise Exception("Terminal " + terminal + " doesn't exist, perhaps you have a wrong test case?")
+        raise Exception("Terminal " + terminal +
+                        " doesn't exist, perhaps you have a wrong test case?")
 
-
-    # return other terminal in the same component 
+    # return other terminal in the same component
     # (assume only two terminals in a single componenet)
     def get_other_terminal_same_component(self, terminal):
         component = self.get_component_from_terminal(terminal)
         for t in component.terminals:
             if (t != terminal):
                 return t
-        
-    # return the value of the comp that 
+
+    # return the value of the comp that
     # the terminal is in
     def get_value_from_terminal(self, terminal):
         component = self.get_component_from_terminal(terminal)
@@ -570,7 +571,7 @@ class Circuit:
         for comp in self._circuit_component_list:
             if comp.name == name:
                 return comp
-        raise Exception(comp + " comp doesn't exist")  
+        raise Exception(comp + " comp doesn't exist")
 
     def get_set(self, term, cons):
         conSet = set()
@@ -591,7 +592,7 @@ class Circuit:
     def node_in_list(self, node1, node2, nTups):
         if (node1, node2) in nTups or (node2, node1) in nTups:
             return True
-        else: 
+        else:
             return False
 
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -608,16 +609,20 @@ class Circuit:
                 connected1 = []
                 for term in comp.connections:
                     for con in comp.connections[term]:
-                        # skip resonator and ground node 
+                        # skip resonator and ground node
                         if con[0] != 'R' and con != 'GND_gnd':
                             conComp = self.get_component_from_terminal(con)
-                            # if same label, add in the same list 
-                            if (comp.component_type == 'josephson_junction') or (conComp.component_type == comp.component_type) or (conComp.component_type == 'josephson_junction'):
+                            # if same label, add in the same list
+                            if (comp.component_type == 'josephson_junction'
+                                ) or (conComp.component_type
+                                      == comp.component_type) or (
+                                          conComp.component_type
+                                          == 'josephson_junction'):
                                 # if same comp connected to both terminals
                                 if conComp in connected1:
                                     conInParallel.append(conComp)
                                 else:
-                                    connected1.append(conComp)     
+                                    connected1.append(conComp)
                 if len(conInParallel) > 1:
                     parallelConnections.append(conInParallel)
                     for c in conInParallel:
@@ -626,20 +631,20 @@ class Circuit:
         # replace parallel-conneted comps with single comp
         # don't remove junctions for now
         for con in parallelConnections:
-            newCap = 0 
+            newCap = 0
             newInd = 0
 
             # check if there's a junction
-            hasJunction = False 
+            hasJunction = False
             junction = None
-            for comp in con: 
+            for comp in con:
                 if (comp.component_type == 'josephson_junction'):
                     hasJunction = True
                     junction = comp
 
             # if there's a junction, add capacitance and inductance
             # of other parallel-connected components to the junction
-            if hasJunction: 
+            if hasJunction:
                 newCap = junction.value['capacitance']
                 newInd = junction.value['inductance']
                 for comp in con:
@@ -649,7 +654,7 @@ class Circuit:
                             cap = comp.value['capacitance']
                             indu = comp.value['inductance']
                             newCap += cap
-                            newInd +=  1 / indu
+                            newInd += 1 / indu
                         elif comp.component_type == 'capacitor':
                             newCap += comp.value['capacitance']
                         elif comp.component_type == 'inductor':
@@ -659,22 +664,22 @@ class Circuit:
                         for t in comp.terminals:
                             for origT in junction.terminals:
                                 if t in junction.connections[origT]:
-                                    junction.connections[origT].remove(t) 
+                                    junction.connections[origT].remove(t)
 
                         # remove terminals of comp in all other comps' connections
-                        for itComp in self._circuit_component_list: 
+                        for itComp in self._circuit_component_list:
                             for itT in itComp.terminals:
                                 for compT in comp.terminals:
                                     if compT in itComp.connections[itT]:
                                         itComp.connections[itT].remove(compT)
 
                         # remove parallel-connected component
-                        self._circuit_component_list.remove(comp)    
+                        self._circuit_component_list.remove(comp)
 
-                # update capacitance and inductance of the junction  
+                # update capacitance and inductance of the junction
                 junction.value = {'capacitance': newCap, 'inductance': newInd}
             # if there're only capacitors
-            elif con[0].component_type == 'capacitor':       
+            elif con[0].component_type == 'capacitor':
                 for comp in con[1:]:
                     # add capacitance in parallel
                     newVal += comp.value['capacitance']
@@ -682,26 +687,26 @@ class Circuit:
                     for t in comp.terminals:
                         for origT in con[0].terminals:
                             if t in con[0].connections[origT]:
-                                con[0].connections[origT].remove(t) 
+                                con[0].connections[origT].remove(t)
                     # remove parallel-connected component
-                    self._circuit_component_list.remove(comp)      
-                con[0].value = str(newVal) + 'F'          
+                    self._circuit_component_list.remove(comp)
+                con[0].value = str(newVal) + 'F'
             # if there're only inductors
             elif con[0].component_type == 'inductor':
                 for comp in con[1:]:
-                    # inverse -- 
-                    newVal +=  1 / comp.value['inductance']
+                    # inverse --
+                    newVal += 1 / comp.value['inductance']
                     # remove redundant connections
                     for t in comp.terminals:
                         for origT in con[0].terminals:
                             if t in con[0].connections[origT]:
-                                con[0].connections[origT].remove(t)  
+                                con[0].connections[origT].remove(t)
                     # remove parallel-connected component
                     self._circuit_component_list.remove(comp)
-                # rounding?    
-                con[0].value = str(1 / newVal) + 'H'          
+                # rounding?
+                con[0].value = str(1 / newVal) + 'H'
 
-    # loop through each component, 
+    # loop through each component,
     # return the list of nodes and the values between them
     def get_nodes(self):
         self.populate_circuit_component_list()
@@ -722,7 +727,8 @@ class Circuit:
                 connections = comp.connections[t]
                 if 'GND_gnd' in connections:
                     new_terminals.append(t)
-                    new_terminals.append(self.get_other_terminal_same_component(t))
+                    new_terminals.append(
+                        self.get_other_terminal_same_component(t))
 
             if new_terminals == []:
                 new_terminals = comp.terminals
@@ -731,12 +737,12 @@ class Circuit:
             nodeName = 'n' + str(ind)
             for t in new_terminals:
                 connections = comp.connections[t]
-                
-                if 'GND_gnd' in connections: 
+
+                if 'GND_gnd' in connections:
                     groundSet.update(connections)
                     groundSet.add(t)
                     groundSet.discard('GND_gnd')
-                else: 
+                else:
                     fSet = self.get_set(t, connections)
                     # check if node already exist
                     if not (fSet in nodeDict):
@@ -744,13 +750,13 @@ class Circuit:
                         ind += 1
                         nodeName = 'n' + str(ind)
                         nodeDict[fSet] = nodeName
-                    
+
                     # check if connected to other node
                     otherT = self.get_other_terminal_same_component(t)
                     node = self.check_terminal_in_dict(otherT, nodeDict)
                     val = self.get_value_from_terminal(t)
-                    if ((node != None) and (node != nodeName) 
-                        and (not self.node_in_list(node, nodeName, nodeTups))):
+                    if ((node != None) and (node != nodeName) and
+                        (not self.node_in_list(node, nodeName, nodeTups))):
                         nodeTups[(node, nodeName)] = (val, comp.name)
                     elif otherT in groundSet:
                         nodeTups[(nodeName, 'GND_gnd')] = (val, comp.name)
@@ -789,44 +795,23 @@ class Circuit:
                         break
         return subsystemMap
 
-    def get_inductor_list(self, nodeTups):
-        ind_list = []
-        # one dictionary per subsystem
+    def get_inductor_dict(self, nodeTups):
         ind_dict = dict()
-        subSysDict = self.get_component_name_subsystem()
-        # loop through each subsystem
-        for subSys in subSysDict:
-            for tup in nodeTups:         
-                val = nodeTups[tup][0]
-                comp = self.get_component_from_name(nodeTups[tup][1])
-                compSS = comp.subsystem
-                inductance = val['inductance']
-                # if has value of inductance and is in current subSys
-                if subSys == compSS and float(inductance) > 0:
-                    ind_dict[tup] = inductance
-            if ind_dict != {}:
-                ind_list.append(ind_dict)
-            ind_dict = {}
-        return ind_list
+        for tup in nodeTups:
+            val = nodeTups[tup][0]
+            inductance = val['inductance']
+            if float(inductance) > 0:
+                ind_dict[tup] = inductance
+        return ind_dict
 
-    def get_junction_list(self, nodeTups):
-        junctionList = []
-        # one dictionary per subsystem
+    def get_junction_dict(self, nodeTups):
         junctionDict = dict()
-        # loop through each subsystem
-        subSysDict = self.get_component_name_subsystem()
-        for subSys in subSysDict:
-            for tup in nodeTups:         
-                comp = self.get_component_from_name(nodeTups[tup][1])
-                compSS = comp.subsystem
-                # if has value of inductance and is in current subSys
-                if comp.component_type == 'josephson_junction' and subSys == compSS:
-                    junctionDict[tup] = comp.name
-            if junctionDict != {}:
-                junctionList.append(junctionDict)
-            junctionDict = {}
+        for tup in nodeTups:
+            comp = self.get_component_from_name(nodeTups[tup][1])
+            if comp.component_type == 'josephson_junction':
+                junctionDict[tup] = comp.name
 
-        return junctionList
+        return junctionDict
 
     def get_capacitance_graph(self, nodeTups):
         capGraph = dict()
@@ -837,10 +822,10 @@ class Circuit:
                 node2 = tup[1]
                 capacitance = val['capacitance']
                 if node1 in capGraph:
-                    capGraph[node1][node2] = capacitance 
+                    capGraph[node1][node2] = capacitance
                 else:
-                    capGraph[node1] = dict() 
-                    capGraph[node1][node2] = capacitance 
+                    capGraph[node1] = dict()
+                    capGraph[node1][node2] = capacitance
 
         return capGraph
 
@@ -850,25 +835,25 @@ def test():
     ##                Test Case 1                 ##
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    #         (S1)       (S1)  
-    #       -- C1 --  -- C2 -- 
+    #         (S1)       (S1)
+    #       -- C1 --  -- C2 --
     #       |                  |
     # (S2)  I2                 I1 (S1)
     #       |                  |
     #        -- C3 -- ---------
     #           (S2)
 
-    # C1 = CircuitComponent('C1', 'capacitor', ('C1_1', 'C1_2'), 
+    # C1 = CircuitComponent('C1', 'capacitor', ('C1_1', 'C1_2'),
     # {'capacitance': 5, 'inductance': 0}, {'C1_1': ['I2_2'], 'C1_2': ['C2_1']}, 'S1')
-    # C2 = CircuitComponent('C2', 'capacitor', ('C2_1', 'C2_2'), 
-    # {'capacitance': 7, 'inductance': 0}, {'C2_1': ['C1_2'], 'C2_2': ['I1_1']}, 'S1') 
-    # I1 = CircuitComponent('I1', 'inductor', ('I1_1', 'I1_2'), 
-    # {'capacitance': 0, 'inductance': 3}, {'I1_1': ['C2_2'], 'I1_2': ['C3_1']}, 'S1') 
-    # C3 = CircuitComponent('C3', 'capacitor', ('C3_1', 'C3_2'), 
-    # {'capacitance': 9, 'inductance': 0}, {'C3_1': ['I1_2'], 'C3_2': ['I2_1']}, 'S2') 
-    # I2 = CircuitComponent('I2', 'inductor', ('I2_1', 'I2_2'), 
-    # {'capacitance': 0, 'inductance': 11}, {'I2_1': ['C3_2'], 'I2_2': ['C1_1']}, 'S2') 
-     
+    # C2 = CircuitComponent('C2', 'capacitor', ('C2_1', 'C2_2'),
+    # {'capacitance': 7, 'inductance': 0}, {'C2_1': ['C1_2'], 'C2_2': ['I1_1']}, 'S1')
+    # I1 = CircuitComponent('I1', 'inductor', ('I1_1', 'I1_2'),
+    # {'capacitance': 0, 'inductance': 3}, {'I1_1': ['C2_2'], 'I1_2': ['C3_1']}, 'S1')
+    # C3 = CircuitComponent('C3', 'capacitor', ('C3_1', 'C3_2'),
+    # {'capacitance': 9, 'inductance': 0}, {'C3_1': ['I1_2'], 'C3_2': ['I2_1']}, 'S2')
+    # I2 = CircuitComponent('I2', 'inductor', ('I2_1', 'I2_2'),
+    # {'capacitance': 0, 'inductance': 11}, {'I2_1': ['C3_2'], 'I2_2': ['C1_1']}, 'S2')
+
     # circuit1 = Circuit([C1, C2, I1, C3, I2])
 
     # print('Test case 1: nodeTups::')
@@ -888,35 +873,35 @@ def test():
     ##                Test Case 2                 ##
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    #         (S1)       (S1)  
-    #        -- C1 -- -- C2 --_ 
+    #         (S1)       (S1)
+    #        -- C1 -- -- C2 --_
     #       |        |         |
     # (S2)  I3       C3 (S1)   I1 (S1)
     #       |        |         |
     #        -- I2 -- -- C4 ---
     #           (S2)     (S2)
 
-    # C1 = CircuitComponent('C1', 'capacitor', ('C1_1', 'C1_2'), 
+    # C1 = CircuitComponent('C1', 'capacitor', ('C1_1', 'C1_2'),
     # {'capacitance': 5, 'inductance': 0}, {'C1_1': ['I3_1'], 'C1_2': ['C2_1', 'C3_1']}, 'S1')
-    # C2 = CircuitComponent('C2', 'capacitor', ('C2_1', 'C2_2'), 
-    # {'capacitance': 7, 'inductance': 0}, {'C2_1': ['C1_2', 'C3_1'], 'C2_2': ['I1_1']}, 'S1') 
-    # C3 = CircuitComponent('C3', 'capacitor', ('C3_1', 'C3_2'), 
-    # {'capacitance': 9, 'inductance': 0}, {'C3_1': ['C1_2', 'C2_1'], 'C3_2': ['C4_1', 'I2_2']}, 'S1') 
-    # I1 = CircuitComponent('I1', 'inductor', ('I1_1', 'I1_2'), 
-    # {'capacitance': 0, 'inductance': 3}, {'I1_1': ['C2_2'], 'I1_2': ['C4_2']}, 'S1') 
+    # C2 = CircuitComponent('C2', 'capacitor', ('C2_1', 'C2_2'),
+    # {'capacitance': 7, 'inductance': 0}, {'C2_1': ['C1_2', 'C3_1'], 'C2_2': ['I1_1']}, 'S1')
+    # C3 = CircuitComponent('C3', 'capacitor', ('C3_1', 'C3_2'),
+    # {'capacitance': 9, 'inductance': 0}, {'C3_1': ['C1_2', 'C2_1'], 'C3_2': ['C4_1', 'I2_2']}, 'S1')
+    # I1 = CircuitComponent('I1', 'inductor', ('I1_1', 'I1_2'),
+    # {'capacitance': 0, 'inductance': 3}, {'I1_1': ['C2_2'], 'I1_2': ['C4_2']}, 'S1')
     # C4 = CircuitComponent('C4', 'capacitor', ('C4_1', 'C4_2'),
-    # {'capacitance': 11, 'inductance': 0}, {'C4_1': ['C3_2', 'I2_2'], 'C4_2': ['I1_2']}, 'S2') 
-    # I2 = CircuitComponent('I2', 'inductor', ('I2_1', 'I2_2'), 
-    # {'capacitance': 0, 'inductance': 20}, {'I2_1': ['I3_2'], 'I2_2': ['C3_2', 'C4_1']}, 'S2') 
-    # I3 = CircuitComponent('I3', 'inductor', ('I3_1', 'I3_2'), 
-    # {'capacitance': 0, 'inductance': 25}, {'I3_1': ['C1_1'], 'I3_2': ['I2_1']}, 'S2') 
-    
+    # {'capacitance': 11, 'inductance': 0}, {'C4_1': ['C3_2', 'I2_2'], 'C4_2': ['I1_2']}, 'S2')
+    # I2 = CircuitComponent('I2', 'inductor', ('I2_1', 'I2_2'),
+    # {'capacitance': 0, 'inductance': 20}, {'I2_1': ['I3_2'], 'I2_2': ['C3_2', 'C4_1']}, 'S2')
+    # I3 = CircuitComponent('I3', 'inductor', ('I3_1', 'I3_2'),
+    # {'capacitance': 0, 'inductance': 25}, {'I3_1': ['C1_1'], 'I3_2': ['I2_1']}, 'S2')
+
     # circuit2 = Circuit([C1, C2, C3, I1, C4, I2, I3])
 
     # print('Test case 2: nodeTups::')
     # nodeT = circuit2.get_nodes()
     # print('Node Dictionary::')
-    # # {('n1', 'n2'): ('5F', 'C1'), ('n2', 'n3'): ('7F', 'C2'), ('n2', 'n4'): ('9F', 'C3'), 
+    # # {('n1', 'n2'): ('5F', 'C1'), ('n2', 'n3'): ('7F', 'C2'), ('n2', 'n4'): ('9F', 'C3'),
     # # ('n3', 'n5'): ('3H', 'I1'), ('n4', 'n5'): ('11F', 'C4'), ('n4', 'n6'): ('20H', 'I2'), ('n1', 'n6'): ('25H', 'I3')}
     # print(nodeT)
     # print('Subsystem Dictionary::')
@@ -929,115 +914,85 @@ def test():
 
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     ##                MVP Circuit                 ##
-    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    
-    
+    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
     circuit_graph = {
-                        "J1": {
-                            "connections": {
-                                "J1_1": [
-                                    "GND_gnd",
-                                    "Cq_1"
-                                ],
-                                "J1_2": [
-                                    "Cq_2",
-                                    "Cc_1"
-                                ]
-                            },
-                            "label": "josephson_junction",
-                            "terminals": [
-                                "J1_1",
-                                "J1_2"
-                            ],
-                            "component_type": "josephson_junction",
-                            "value": {
-                                "capacitance": 2,
-                                "inductance": 10
-                            },
-                            "subsystem": {
-                                "name": "transmon_alice"
-                            }
-                        },
-                        "Cq": {
-                            "connections": {
-                                "Cq_1": [
-                                    "J1_1",
-                                    "GND_gnd"
-                                ],
-                                "Cq_2": [
-                                    "J1_2",
-                                    "Cc_1"
-                                ]
-                            },
-                            "label": "capacitor",
-                            "terminals": [
-                                "Cq_1",
-                                "Cq_2"
-                            ],
-                            "component_type": "capacitor",
-                            "value": {
-                                "capacitance": 5,
-                                "inductance": 0
-                            },
-                            "subsystem": {
-                                "name": "transmon_alice",
-                            }
-                        },
-                        "Cc": {
-                            "connections": {
-                                "Cc_1": [
-                                    "J1_2",
-                                    "Cq_2"
-                                ],
-                                "Cc_2": [
-                                    "Cl_2"
-                                ]
-                            },
-                            "label": "capacitor",
-                            "terminals": [
-                                "Cc_1",
-                                "Cc_2"
-                            ],
-                            "component_type": "capacitor",
-                            "value": {
-                                "capacitance": 5,
-                                "inductance": 0
-                            },
-                            "subsystem": {}
-                        },
-                        # Data structure for the subgraph of R1
-                        "Cl": {
-                            "connections": {
-                                "Cl_2": [
-                                    "Cc_2"
-                                ],
-                                "Cl_1": [
-                                    "GND_gnd"
-                                ]
-                            },
-                            "label": "capacitor",
-                            "terminals": [
-                                "Cl_1",
-                                "Cl_2"
-                            ],
-                            "component_type": "capacitor",
-                            "value": {
-                                "capacitance": 10,
-                                "inductance": 0
-                            },
-                            "subsystem": {
-                                "name": "readout_resonator"
-                            }
-                        }
-                    }
+        "J1": {
+            "connections": {
+                "J1_1": ["GND_gnd", "Cq_1"],
+                "J1_2": ["Cq_2", "Cc_1"]
+            },
+            "label": "josephson_junction",
+            "terminals": ["J1_1", "J1_2"],
+            "component_type": "josephson_junction",
+            "value": {
+                "capacitance": 2,
+                "inductance": 10
+            },
+            "subsystem": {
+                "name": "transmon_alice"
+            }
+        },
+        "Cq": {
+            "connections": {
+                "Cq_1": ["J1_1", "GND_gnd"],
+                "Cq_2": ["J1_2", "Cc_1"]
+            },
+            "label": "capacitor",
+            "terminals": ["Cq_1", "Cq_2"],
+            "component_type": "capacitor",
+            "value": {
+                "capacitance": 5,
+                "inductance": 0
+            },
+            "subsystem": {
+                "name": "transmon_alice",
+            }
+        },
+        "Cc": {
+            "connections": {
+                "Cc_1": ["J1_2", "Cq_2"],
+                "Cc_2": ["Cl_2"]
+            },
+            "label": "capacitor",
+            "terminals": ["Cc_1", "Cc_2"],
+            "component_type": "capacitor",
+            "value": {
+                "capacitance": 5,
+                "inductance": 0
+            },
+            "subsystem": {}
+        },
+        # Data structure for the subgraph of R1
+        "Cl": {
+            "connections": {
+                "Cl_2": ["Cc_2"],
+                "Cl_1": ["GND_gnd"]
+            },
+            "label": "capacitor",
+            "terminals": ["Cl_1", "Cl_2"],
+            "component_type": "capacitor",
+            "value": {
+                "capacitance": 10,
+                "inductance": 0
+            },
+            "subsystem": {
+                "name": "readout_resonator"
+            }
+        }
+    }
 
     circuit_mvp = Circuit(circuit_graph)
 
-    transmon_alice = Subsystem2(name='transmon_alice', sys_label='TRANSMON', 
-        options=None, nodes=['j1'])
+    transmon_alice = Subsystem2(name='transmon_alice',
+                                sys_label='TRANSMON',
+                                options=None,
+                                nodes=['j1'])
 
     print('MVP circuit: nodeTups::')
     nodeT = circuit_mvp.get_nodes()
     # {('n1', 'GND'): ('7F_10H', 'J1'), ('n1', 'n2'): ('5F', 'Cc'), ('n2', 'GND'): ('10F', 'Cl')}
     print(nodeT)
+
 
 test()

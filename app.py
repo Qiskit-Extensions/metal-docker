@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from qiskit_metal.analyses.quantization.lumped_capacitive import load_q3d_capacitance_matrix
@@ -14,9 +16,20 @@ import pprint as pp
 from time import time
 
 from jupyter import generate_notebook
+from subsystems import TLResonator
+from utils.utils import dict_to_float
 
 app = Flask(__name__)
 CORS(app)
+
+BASIC_COMPONENT_TYPES = [
+    "capacitor",
+    "inductor",
+    "josephson_junction",
+    'ground',
+]
+
+SUBSYSTEM_TYPE_MAP = {'TL_RESONATOR': TLResonator}
 
 
 def demo(print_output=True):
@@ -166,69 +179,56 @@ def convert_netlist_to_maxwell(df):
     return df_new
 
 
-def dict_to_float(dictionary):
-    new_dictionary = {}
-    for key, value in dictionary.items():
-        new_dictionary[key] = float(value)
+def add_subsystem_components(circuit_graph, subsystem_list):
+    circuit_graph_copy = deepcopy(circuit_graph)
 
-    return new_dictionary
-
-
-def add_subsystem_components(circuit_graph):
     new_circuit_graph = {}
-    timestamp = str(int(time()))
-    capacitor_name = 'capacitor_' + timestamp
+    terminal_map_agg = {}
 
-    subsystem_types = [
-        'left_side_loaded_tl_resonator', 'right_side_loaded_tl_resonator'
-    ]
-
-    # TODO: There can be composite subsystems where user uploads info, so first get info
-    # from frontend for composite_subsystem
-    for component_name, component_metadata in circuit_graph.items():
-        if component_metadata['component_type'] not in subsystem_types:
+    for component_name, component_metadata in circuit_graph_copy.items():
+        if component_metadata['component_type'] in BASIC_COMPONENT_TYPES:
             new_circuit_graph[component_name] = component_metadata
             new_circuit_graph[component_name]['value'] = dict_to_float(
                 component_metadata['value'])
         else:
-            new_circuit_graph[capacitor_name] = {}
-            connected_terminal = circuit_graph[component_name]['connections'][
-                component_name + '_1']
-            new_circuit_graph[capacitor_name]['label'] = 'capacitor'
-            new_circuit_graph[capacitor_name]['component_type'] = 'capacitor'
-            new_circuit_graph[capacitor_name]['terminals'] = [
-                capacitor_name + '_1', capacitor_name + '_2'
-            ]
-            new_circuit_graph[capacitor_name]['value'] = dict_to_float(
-                component_metadata['value'])
-            new_circuit_graph[capacitor_name]['connections'] = {}
-            new_circuit_graph[capacitor_name]['connections'][
-                capacitor_name + '_1'] = connected_terminal
-            new_circuit_graph[capacitor_name]['connections'][capacitor_name +
-                                                             '_2'] = []
-            new_circuit_graph[capacitor_name][
-                'subsystem'] = component_metadata['subsystem']
-            new_circuit_graph[connected_terminal[0][:-2]]['connections'][
-                connected_terminal[0]] = [capacitor_name + '_1']
-            new_circuit_graph[capacitor_name]['connections'][capacitor_name +
-                                                             '_2'] = [
-                                                                 'GND_gnd'
-                                                             ]
+            subsystem_type = subsystem_list[
+                component_metadata['subsystem']].get('subsystem_type')
+            subsystem = SUBSYSTEM_TYPE_MAP[subsystem_type](circuit_graph,
+                                                           subsystem_list)
+            subgraphs, terminal_map = subsystem.make_subsystem_subgraphs(
+                component_name)
+            new_circuit_graph = {**new_circuit_graph, **subgraphs}
+            terminal_map_agg = {**terminal_map_agg, **terminal_map}
+
+    for _, comp_data in new_circuit_graph.items():
+        connections = comp_data['connections']
+        for terminal, connected_terminals in connections.items():
+            connected_terminals_new = []
+            for term_orig in connected_terminals:
+                if term_orig in terminal_map_agg:
+                    connected_terminals_new.extend(terminal_map_agg[term_orig])
+                else:
+                    connected_terminals_new.append(term_orig)
+            connections[terminal] = connected_terminals_new
 
     return new_circuit_graph
 
 
 def rename_ground_nodes(new_circuit_graph):
     circuit_graph_grounds = {}
+
+    circuit_graph_grounds['GND'] = {}
+    circuit_graph_grounds['GND']['label'] = 'ground'
+    circuit_graph_grounds['GND']['subsystem'] = ''
+    circuit_graph_grounds['GND']['component_type'] = 'ground'
+    circuit_graph_grounds['GND']['value'] = {'capacitance': 0, 'inductance': 0}
+    circuit_graph_grounds['GND']['terminals'] = ['GND_gnd']
+    circuit_graph_grounds['GND']['connections'] = {'GND_gnd': []}
+
     for component, component_metadata in new_circuit_graph.items():
         if 'ground' in component:
-            # Do we need a deep copy here?
-            circuit_graph_grounds['GND'] = component_metadata.copy()
-            circuit_graph_grounds['GND']['terminals'] = ['GND_gnd']
-            circuit_graph_grounds['GND']['connections'] = {}
-            circuit_graph_grounds['GND']['connections'][
-                'GND_gnd'] = component_metadata['connections'][component +
-                                                               '_gnd']
+            circuit_graph_grounds['GND']['connections']['GND_gnd'].extend(
+                component_metadata['connections'][component + '_gnd'])
         else:
             circuit_graph_grounds[component] = component_metadata
             for terminal, connections in component_metadata[
@@ -241,6 +241,9 @@ def rename_ground_nodes(new_circuit_graph):
                         new_connections.append(connection)
                 circuit_graph_grounds[component]['connections'][
                     terminal] = new_connections
+
+    circuit_graph_grounds['GND']['connections']['GND_gnd'] = list(
+        set(circuit_graph_grounds['GND']['connections']['GND_gnd']))
 
     return circuit_graph_grounds
 
@@ -268,11 +271,12 @@ def get_keep_nodes(subsystems):
 def simulate():
     req = request.get_json()
     circuit_graph = req['Circuit Graph']
+    subsystem_list = req['Subsystems']
 
     print('Circuit Graph:')
     pp.pp(circuit_graph)
 
-    new_circuit_graph = add_subsystem_components(circuit_graph)
+    new_circuit_graph = add_subsystem_components(circuit_graph, subsystem_list)
     circuit_graph_grounds = rename_ground_nodes(new_circuit_graph)
 
     circuit_mvp = Circuit(circuit_graph_grounds)
@@ -295,8 +299,8 @@ def simulate():
                       nodes))
     converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
 
-    inductor_list = circuit_mvp.get_inductor_list(nodeT)
-    junction_list = circuit_mvp.get_junction_list(nodeT)
+    inductor_dict = circuit_mvp.get_inductor_dict(nodeT)
+    junction_dict = circuit_mvp.get_junction_dict(nodeT)
     component_name_subsystem = circuit_mvp.get_component_name_subsystem()
     subsystem_map = circuit_mvp.get_subsystem_map(component_name_subsystem,
                                                   nodeT)
@@ -305,10 +309,8 @@ def simulate():
 
     # Check subsystem_map to see if the pair of nodes is in the junction list and replace if it is
     for subsystem, nodes in subsystem_map.items():
-        if tuple(nodes) in junction_list[0].keys():
-            subsystem_list[subsystem]['nodes'] = [
-                junction_list[0][tuple(nodes)]
-            ]
+        if tuple(nodes) in junction_dict:
+            subsystem_list[subsystem]['nodes'] = [junction_dict[tuple(nodes)]]
         else:
             # If the node tuple is not a key in the junction list, remove the ground node, and set
             # 'nodes' for the subsystem in subsystem_list to the remaining nodes
@@ -330,8 +332,8 @@ def simulate():
         Cell(
             dict(node_rename={},
                  cap_mat=converted_capacitance,
-                 ind_dict=inductor_list[0],
-                 jj_dict=junction_list[0],
+                 ind_dict=inductor_dict,
+                 jj_dict=junction_dict,
                  cj_dict={})))
 
     nodes_force_keep = get_keep_nodes(subsystems)
