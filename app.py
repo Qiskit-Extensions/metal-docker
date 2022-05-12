@@ -1,20 +1,14 @@
 from copy import deepcopy
+import json
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from qiskit_metal.analyses.quantization.lumped_capacitive import load_q3d_capacitance_matrix
-from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
-
-from scipy.constants import speed_of_light as c_light
 import pandas as pd
 import numpy as np
-from collections import defaultdict
-import json
-from ast import literal_eval
-from graph_conversion.graph_conversion.graph_conversion import CircuitComponent, Circuit, Subsystem2
 import pprint as pp
-from time import time
 
+from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
+from graph_conversion.graph_conversion.graph_conversion import Circuit
 from jupyter import generate_notebook
 from subsystems import TLResonator
 from utils.utils import dict_to_float
@@ -30,95 +24,6 @@ BASIC_COMPONENT_TYPES = [
 ]
 
 SUBSYSTEM_TYPE_MAP = {'TL_RESONATOR': TLResonator}
-
-
-def demo(print_output=True):
-    # alice cap matrix
-    path1 = './Q1_TwoTransmon_CapMatrix.txt'
-    ta_mat, _, _, _ = load_q3d_capacitance_matrix(path1)
-
-    # bob cap matrix
-    path2 = './Q2_TwoTransmon_CapMatrix.txt'
-    tb_mat, _, _, _ = load_q3d_capacitance_matrix(path2)
-
-    # cell 1: transmon Alice cell
-    opt1 = dict(
-        node_rename={
-            'coupler_connector_pad_Q1': 'coupling',
-            'readout_connector_pad_Q1': 'readout_alice'
-        },
-        cap_mat=ta_mat,
-        ind_dict={('pad_top_Q1', 'pad_bot_Q1'):
-                  10},  # junction inductance in nH
-        jj_dict={('pad_top_Q1', 'pad_bot_Q1'): 'j1'},
-        cj_dict={('pad_top_Q1', 'pad_bot_Q1'):
-                 2},  # junction capacitance in fF
-    )
-    cell_1 = Cell(opt1)
-
-    # cell 2: transmon Bob cell
-    opt2 = dict(
-        node_rename={
-            'coupler_connector_pad_Q2': 'coupling',
-            'readout_connector_pad_Q2': 'readout_bob'
-        },
-        cap_mat=tb_mat,
-        ind_dict={('pad_top_Q2', 'pad_bot_Q2'):
-                  12},  # junction inductance in nH
-        jj_dict={('pad_top_Q2', 'pad_bot_Q2'): 'j2'},
-        cj_dict={('pad_top_Q2', 'pad_bot_Q2'):
-                 2},  # junction capacitance in fF
-    )
-    cell_2 = Cell(opt2)
-
-    # subsystem 1: transmon Alice
-    transmon_alice = Subsystem(name='transmon_alice',
-                               sys_type='TRANSMON',
-                               nodes=['j1'])
-
-    # subsystem 2: transmon Bob
-    transmon_bob = Subsystem(name='transmon_bob',
-                             sys_type='TRANSMON',
-                             nodes=['j2'])
-
-    # subsystem 3: Alice readout resonator
-    q_opts = dict(
-        f_res=8,  # resonator dressed frequency in GHz
-        Z0=50,  # characteristic impedance in Ohm
-        vp=0.404314 * c_light  # phase velocity
-    )
-    res_alice = Subsystem(name='readout_alice',
-                          sys_type='TL_RESONATOR',
-                          nodes=['readout_alice'],
-                          q_opts=q_opts)
-
-    # subsystem 4: Bob readout resonator
-    q_opts = dict(
-        f_res=7.6,  # resonator dressed frequency in GHz
-        Z0=50,  # characteristic impedance in Ohm
-        vp=0.404314 * c_light  # phase velocity
-    )
-    res_bob = Subsystem(name='readout_bob',
-                        sys_type='TL_RESONATOR',
-                        nodes=['readout_bob'],
-                        q_opts=q_opts)
-
-    composite_sys = CompositeSystem(
-        subsystems=[transmon_alice, transmon_bob, res_alice, res_bob],
-        cells=[cell_1, cell_2],
-        grd_node='ground_main_plane',
-        nodes_force_keep=['readout_alice', 'readout_bob'])
-
-    cg = composite_sys.circuitGraph()
-    if print_output:
-        print(cg)
-    return cg
-
-
-@app.route('/')
-def hello_world():
-    cg = demo(print_output=False)
-    return cg.C_k.to_dataframe().to_json()
 
 
 def adj_list_to_mat(index, adj_list):
@@ -150,33 +55,22 @@ def _make_cmat_df(cmat, nodes):
     return df
 
 
-def _df_cmat_to_adj_list(df_cmat: pd.DataFrame):
-    """
-    generate an adjacency list from a capacitance matrix in a dataframe
-    """
-    nodes = df_cmat.columns.values
-    vals = df_cmat.values
-    graph = defaultdict(list)
-    for ii, node in enumerate(nodes):
-        for jj in range(ii, len(nodes)):
-            graph[node].append((nodes[jj], vals[ii, jj]))
-    return graph
-
-
-def deserialize_tuple_dict_list(serialized_list):
-    print('serialized_list:', serialized_list)
-    print('items:', serialized_list.items())
-    data = {literal_eval(k): v for k, v in serialized_list.items()}
-    print(data)
-    return data
-
-
 def convert_netlist_to_maxwell(df):
     df_new = df.copy()
     for key in df.keys():
         df_new[key][key] = -sum(df[key].values)
         df_new[key] = -df_new[key]
     return df_new
+
+
+def get_component_name_from_terminal(circuit_graph, terminal):
+    """
+    Return the CircuitComponent that has the given terminal
+    """
+    for comp_name, comp_data in circuit_graph.items():
+        if terminal in comp_data['terminals']:
+            return comp_name
+    raise ValueError(f'Terminal {terminal} doesn\'t exist')
 
 
 def add_subsystem_components(circuit_graph, subsystem_list):
@@ -200,16 +94,21 @@ def add_subsystem_components(circuit_graph, subsystem_list):
             new_circuit_graph = {**new_circuit_graph, **subgraphs}
             terminal_map_agg = {**terminal_map_agg, **terminal_map}
 
-    for _, comp_data in new_circuit_graph.items():
-        connections = comp_data['connections']
-        for terminal, connected_terminals in connections.items():
-            connected_terminals_new = []
-            for term_orig in connected_terminals:
-                if term_orig in terminal_map_agg:
-                    connected_terminals_new.extend(terminal_map_agg[term_orig])
-                else:
-                    connected_terminals_new.append(term_orig)
-            connections[terminal] = connected_terminals_new
+    for _, terminal_new in terminal_map_agg.items():
+        comp = new_circuit_graph[get_component_name_from_terminal(
+            new_circuit_graph, terminal_new)]
+        for terminal, connections in comp['connections'].items():
+            for t in connections:
+                if t in terminal_map_agg:
+                    t = terminal_map_agg[t]
+                connected_comp = new_circuit_graph[
+                    get_component_name_from_terminal(new_circuit_graph, t)]
+                _connections = connected_comp['connections'][t]
+                for idx, _t in enumerate(_connections):
+                    if _t in terminal_map_agg:
+                        _connections[idx] = terminal_map_agg[_t]
+                if terminal not in _connections:
+                    _connections.append(terminal)
 
     return new_circuit_graph
 
@@ -276,20 +175,23 @@ def simulate():
     print('Circuit Graph:')
     pp.pp(circuit_graph)
 
-    new_circuit_graph = add_subsystem_components(circuit_graph, subsystem_list)
-    circuit_graph_grounds = rename_ground_nodes(new_circuit_graph)
+    circuit_graph_renamed = rename_ground_nodes(circuit_graph)
+    new_circuit_graph = add_subsystem_components(circuit_graph_renamed,
+                                                 subsystem_list)
 
-    circuit_mvp = Circuit(circuit_graph_grounds)
+    circuit_mvp = Circuit(new_circuit_graph)
 
-    nodeT = circuit_mvp.get_nodes()
-    capacitance_graph = circuit_mvp.get_capacitance_graph(nodeT)
-
+    capacitance_graph = circuit_mvp.get_capacitance_graph()
     new_capacitance_graph = {}  #restructure data to work with LOM code
     for node, connections in capacitance_graph.items():
         new_capacitance_graph[node] = []
         for connection_node, capacitance in connections.items():
             new_capacitance_graph[node].append(
                 (connection_node, float(capacitance)))
+
+    inductor_dict = circuit_mvp.get_inductance_branches()
+    junction_dict = circuit_mvp.get_jj_branches()
+    subsystem_map = circuit_mvp.get_subsystem_to_nodes_map()
 
     c_mats = []
     nodes = get_capacitor_nodes(new_capacitance_graph)
@@ -298,12 +200,6 @@ def simulate():
         _make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph),
                       nodes))
     converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
-
-    inductor_dict = circuit_mvp.get_inductor_dict(nodeT)
-    junction_dict = circuit_mvp.get_junction_dict(nodeT)
-    component_name_subsystem = circuit_mvp.get_component_name_subsystem()
-    subsystem_map = circuit_mvp.get_subsystem_map(component_name_subsystem,
-                                                  nodeT)
 
     subsystem_list = req['Subsystems']
 

@@ -50,8 +50,8 @@ class TLResonator(SubsystemGraph):
         subgraphs[loading_cap_name]['connections'] = connections
 
         terminal_map = {
-            f'{component_name}_1': [f'{loading_cap_name}_1'],
-            f'{component_name}_2': [f'{loading_cap_name}_2']
+            f'{component_name}_1': f'{loading_cap_name}_1',
+            f'{component_name}_2': f'{loading_cap_name}_2'
         }
 
         return subgraphs, terminal_map
