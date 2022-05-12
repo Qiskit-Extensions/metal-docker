@@ -8,7 +8,7 @@ import numpy as np
 import pprint as pp
 
 from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
-from graph_conversion.graph_conversion.graph_conversion import Circuit
+from graph_conversion.graph_conversion import Circuit
 from jupyter import generate_notebook
 from subsystems import TLResonator
 from utils.utils import dict_to_float
