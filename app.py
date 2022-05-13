@@ -14,6 +14,8 @@ from subsystems import TLResonator
 from utils.utils import dict_to_float
 
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
+
 CORS(app)
 
 BASIC_COMPONENT_TYPES = [
