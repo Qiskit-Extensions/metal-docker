@@ -101,6 +101,6 @@ conda install ipykernel
 ipython kernel install --user --name=<any_name_for_kernel>
 ```
 
-Now go to the Debug panel (Ctrl+Shift+D on Windows/Linux, ⇧+⌘+D on macOS), select a launch configuration, then press F5 or select Debug: Start Debugging from the Command Palette to start your debugging session.
+Now go to the Debug panel (Ctrl+Shift+D on Windows/Linux, ⇧+⌘+D on macOS), select `Python: Flask`, then press F5 or select Debug: Start Debugging from the Command Palette to start your debugging session.
 
 See the [qc-spice README](https://github.com/qiskit-metal-cloud/qc-spice/blob/pass-errors/README.md) for setup instructions for the frontend.
