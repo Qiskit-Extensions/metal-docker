@@ -23,6 +23,7 @@ git clone https://github.com/qiskit-metal-cloud/metal-docker.git
 
 ## Setup in a conda environment (preferred setup)
 
+We recommend using the same conda environment for both the frontend and the backend.
 If you did not yet install conda, please follow these [instructions](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
 
 ```sh
@@ -102,4 +103,4 @@ ipython kernel install --user --name=<any_name_for_kernel>
 
 Now go to the Debug panel (Ctrl+Shift+D on Windows/Linux, ⇧+⌘+D on macOS), select a launch configuration, then press F5 or select Debug: Start Debugging from the Command Palette to start your debugging session.
 
-See the [metal-docker README](https://github.com/qiskit-metal-cloud/metal-docker/blob/pass-errors/README.md) for setup instructions for the backend.
+See the [qc-spice README](https://github.com/qiskit-metal-cloud/qc-spice/blob/pass-errors/README.md) for setup instructions for the frontend.
