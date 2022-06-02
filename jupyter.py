@@ -16,7 +16,7 @@ _SUPPORTED_SUBSYSTEMS = {
     }
 }
 
-KERNEL = 'python3'
+KERNEL = 'python'
 
 
 def _extract_params(quantum_sys, param_keys):
