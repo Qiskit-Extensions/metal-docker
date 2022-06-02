@@ -3,6 +3,7 @@ import json
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import logging
 import pandas as pd
 import numpy as np
 import pprint as pp
@@ -170,18 +171,20 @@ def get_keep_nodes(subsystems):
 
 @app.route('/simulate', methods=['POST'])
 def simulate():
+    logging.info('Hitting simulate endpoint')
     req = request.get_json()
     circuit_graph = req['Circuit Graph']
     subsystem_list = req['Subsystems']
 
-    print('Circuit Graph:')
-    pp.pp(circuit_graph)
+    logging.info('Circuit graph and subsystems loaded')
 
     circuit_graph_renamed = rename_ground_nodes(circuit_graph)
     new_circuit_graph = add_subsystem_components(circuit_graph_renamed,
                                                  subsystem_list)
 
     circuit_mvp = Circuit(new_circuit_graph)
+
+    logging.info('Circuit created')
 
     capacitance_graph = circuit_mvp.get_capacitance_graph()
     new_capacitance_graph = {}  #restructure data to work with LOM code
@@ -241,18 +244,22 @@ def simulate():
                                     grd_node='GND_gnd',
                                     nodes_force_keep=nodes_force_keep)
 
+    logging.info('Constructing Hamiltonian')
+
     hilbertspace = composite_sys.add_interaction()
     hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace,
                                                             evals_count=30)
 
-    notebook = generate_notebook(composite_sys)
+    # notebook = generate_notebook(composite_sys)
     sim_results = {}
-    sim_results['notebook'] = notebook
+    # sim_results['notebook'] = notebook
     sim_results['fQ_in_Ghz'] = hamiltonian_results['fQ_in_Ghz']
 
     res_df = hamiltonian_results['chi_in_MHz'].to_dataframe()
 
     sim_results['chi_in_MHz'] = json.loads(res_df.to_json(orient='records'))
     sim_results = jsonify(sim_results)
+
+    logging.info('Returning sim results')
 
     return sim_results
