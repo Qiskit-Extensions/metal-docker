@@ -13,6 +13,8 @@ from jupyter import generate_notebook
 from subsystems import TLResonator
 from utils.utils import dict_to_float
 
+from validation.exceptions import _error_handling_wrapper
+from validation.validate import ValidateInput
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
@@ -169,94 +171,94 @@ def get_keep_nodes(subsystems):
 
 
 @app.route('/simulate', methods=['POST'])
+@_error_handling_wrapper
 def simulate():
-    try:
+    req = request.get_json()
+    circuit_graph = req['Circuit Graph']
+    subsystem_list = req['Subsystems']
 
-        req = request.get_json()
-        circuit_graph = req['Circuit Graph']
-        subsystem_list = req['Subsystems']
+    ValidateInput(circuit_graph, subsystem_list)
 
-        print('Circuit Graph:')
-        pp.pp(circuit_graph)
+    print('Circuit Graph:')
+    pp.pp(circuit_graph)
 
-        circuit_graph_renamed = rename_ground_nodes(circuit_graph)
-        new_circuit_graph = add_subsystem_components(circuit_graph_renamed,
-                                                    subsystem_list)
+    circuit_graph_renamed = rename_ground_nodes(circuit_graph)
+    new_circuit_graph = add_subsystem_components(circuit_graph_renamed,
+                                                subsystem_list)
 
-        circuit_mvp = Circuit(new_circuit_graph)
+    circuit_mvp = Circuit(new_circuit_graph)
 
-        capacitance_graph = circuit_mvp.get_capacitance_graph()
-        new_capacitance_graph = {}  #restructure data to work with LOM code
-        for node, connections in capacitance_graph.items():
-            new_capacitance_graph[node] = []
-            for connection_node, capacitance in connections.items():
-                new_capacitance_graph[node].append(
-                    (connection_node, float(capacitance)))
+    capacitance_graph = circuit_mvp.get_capacitance_graph()
+    new_capacitance_graph = {}  #restructure data to work with LOM code
+    for node, connections in capacitance_graph.items():
+        new_capacitance_graph[node] = []
+        for connection_node, capacitance in connections.items():
+            new_capacitance_graph[node].append(
+                (connection_node, float(capacitance)))
 
-        inductor_dict = circuit_mvp.get_inductance_branches()
-        junction_dict = circuit_mvp.get_jj_branches()
-        subsystem_map = circuit_mvp.get_subsystem_to_nodes_map()
+    inductor_dict = circuit_mvp.get_inductance_branches()
+    junction_dict = circuit_mvp.get_jj_branches()
+    subsystem_map = circuit_mvp.get_subsystem_to_nodes_map()
 
-        c_mats = []
-        nodes = get_capacitor_nodes(new_capacitance_graph)
-        inp_keys_index = pd.Index(nodes)
-        c_mats.append(
-            _make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph),
-                        nodes))
-        converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
+    c_mats = []
+    nodes = get_capacitor_nodes(new_capacitance_graph)
+    inp_keys_index = pd.Index(nodes)
+    c_mats.append(
+        _make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph),
+                    nodes))
+    converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
 
-        subsystem_list = req['Subsystems']
+    subsystem_list = req['Subsystems']
 
-        # Check subsystem_map to see if the pair of nodes is in the junction list and replace if it is
-        for subsystem, nodes in subsystem_map.items():
-            if tuple(nodes) in junction_dict:
-                subsystem_list[subsystem]['nodes'] = [junction_dict[tuple(nodes)]]
-            else:
-                # If the node tuple is not a key in the junction list, remove the ground node, and set
-                # 'nodes' for the subsystem in subsystem_list to the remaining nodes
-                if subsystem is not None:
-                    subsystem_list[subsystem]['nodes'] = [
-                        n for n in nodes if n != 'GND_gnd'
-                    ]
+    # Check subsystem_map to see if the pair of nodes is in the junction list and replace if it is
+    for subsystem, nodes in subsystem_map.items():
+        if tuple(nodes) in junction_dict:
+            subsystem_list[subsystem]['nodes'] = [junction_dict[tuple(nodes)]]
+        else:
+            # If the node tuple is not a key in the junction list, remove the ground node, and set
+            # 'nodes' for the subsystem in subsystem_list to the remaining nodes
+            if subsystem is not None:
+                subsystem_list[subsystem]['nodes'] = [
+                    n for n in nodes if n != 'GND_gnd'
+                ]
 
-        subsystems = []
-        for subsystem, subsystem_metadata in subsystem_list.items():
-            subsystems.append(
-                Subsystem(name=subsystem,
-                        sys_type=subsystem_metadata['subsystem_type'],
-                        nodes=subsystem_metadata['nodes'],
-                        q_opts=subsystem_metadata.get('options', None)))
+    subsystems = []
+    for subsystem, subsystem_metadata in subsystem_list.items():
+        subsystems.append(
+            Subsystem(name=subsystem,
+                    sys_type=subsystem_metadata['subsystem_type'],
+                    nodes=subsystem_metadata['nodes'],
+                    q_opts=subsystem_metadata.get('options', None)))
 
-        cell_list = []
-        cell_list.append(
-            Cell(
-                dict(node_rename={},
-                    cap_mat=converted_capacitance,
-                    ind_dict=inductor_dict,
-                    jj_dict=junction_dict,
-                    cj_dict={})))
+    cell_list = []
+    cell_list.append(
+        Cell(
+            dict(node_rename={},
+                cap_mat=converted_capacitance,
+                ind_dict=inductor_dict,
+                jj_dict=junction_dict,
+                cj_dict={})))
 
-        nodes_force_keep = get_keep_nodes(subsystems)
+    nodes_force_keep = get_keep_nodes(subsystems)
 
-        composite_sys = CompositeSystem(subsystems=subsystems,
-                                        cells=cell_list,
-                                        grd_node='GND_gnd',
-                                        nodes_force_keep=nodes_force_keep)
+    composite_sys = CompositeSystem(subsystems=subsystems,
+                                    cells=cell_list,
+                                    grd_node='GND_gnd',
+                                    nodes_force_keep=nodes_force_keep)
 
-        hilbertspace = composite_sys.add_interaction()
-        hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace,
-                                                                evals_count=30)
+    hilbertspace = composite_sys.add_interaction()
+    hamiltonian_results = composite_sys.hamiltonian_results(hilbertspace,
+                                                            evals_count=30)
 
-        notebook = generate_notebook(composite_sys)
-        sim_results = {}
-        sim_results['notebook'] = notebook
-        sim_results['fQ_in_Ghz'] = hamiltonian_results['fQ_in_Ghz']
+    notebook = generate_notebook(composite_sys)
+    sim_results = {}
+    sim_results['notebook'] = notebook
+    sim_results['fQ_in_Ghz'] = hamiltonian_results['fQ_in_Ghz']
 
-        res_df = hamiltonian_results['chi_in_MHz'].to_dataframe()
+    res_df = hamiltonian_results['chi_in_MHz'].to_dataframe()
 
-        sim_results['chi_in_MHz'] = json.loads(res_df.to_json(orient='records'))
-        sim_results = jsonify(sim_results)
+    sim_results['chi_in_MHz'] = json.loads(res_df.to_json(orient='records'))
+    sim_results = jsonify(sim_results)
 
-        return sim_results
-    except Exception:
-        return jsonify(error="oh crap...")
+    return sim_results
+
