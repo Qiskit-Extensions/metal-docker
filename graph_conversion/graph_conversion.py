@@ -1,8 +1,26 @@
+import numpy as np
 from collections import defaultdict, namedtuple
+from itertools import product
+
+SWEEP_NUM = 5
 
 CircuitComponent = namedtuple('CircuitComponent', [
     'name', 'component_type', 'terminals', 'value', 'connections', 'subsystem'
 ])
+
+
+def _combine_parallel_cap(*args):
+    if len(args) == 2:
+        return args[0] + args[1]
+    else:
+        return args[0]
+
+
+def _combine_parallel_ind(*args):
+    if len(args) == 2:
+        return (args[0] * args[1]) / (args[0] + args[1])
+    else:
+        return args[0]
 
 
 def _dfs_connected_terminals(connected, terminal, connections, visited):
@@ -29,6 +47,21 @@ def _find_connected_terminals(connections):
                 _dfs_connected_terminals(connected, terminal, connections,
                                          visited))
     return connected_components
+
+
+def get_capacitance_graph(cap_branches):
+    capGraph = defaultdict(dict)
+    for (node1, node2), val in cap_branches.items():
+        capGraph[node1][node2] = val
+
+    new_capacitance_graph = {}  #restructure data to work with LOM code
+    for node, connections in capGraph.items():
+        new_capacitance_graph[node] = []
+        for connection_node, capacitance in connections.items():
+            new_capacitance_graph[node].append(
+                (connection_node, float(capacitance)))
+
+    return new_capacitance_graph
 
 
 class Circuit:
@@ -87,47 +120,44 @@ class Circuit:
                 subDict[subSys].append(comp.name)
         return subDict
 
-    # convert componenets in subsystem map as nodes
-    def get_subsystem_map(self, subsystemDict, nodeTup):
-        subsystemMap = subsystemDict.copy()
-        # loop through all subsystems
-        for subsystem in subsystemDict:
-            # for each component in a subsystem
-            for comp in subsystemDict[subsystem]:
-                for tup in nodeTup:
-                    if nodeTup[tup][1] == comp:
-                        subsystemMap[subsystem].remove(comp)
-                        # convert component to nodes it's connected to
-                        if tup[0] not in subsystemMap[subsystem]:
-                            subsystemMap[subsystem].append(tup[0])
-                        if tup[1] not in subsystemMap[subsystem]:
-                            subsystemMap[subsystem].append(tup[1])
-                        break
-        return subsystemMap
-
     def _get_branches(self, branch_type):
-        branches = defaultdict(float)
+        branches = defaultdict(list)
+        to_sweeping_components = defaultdict(list)
         for comp in self._circuit_component_list:
-            if comp.value.get(branch_type, 0) > 0:
-                nodes = tuple(
-                    sorted(
-                        list(
-                            set([
-                                self.terminals_to_nodes[t]
-                                for t in comp.terminals
-                            ]))))
+            nodes = tuple(
+                sorted(
+                    list(
+                        set([
+                            self.terminals_to_nodes[t] for t in comp.terminals
+                        ]))))
+
+            lo = comp.value.get(f'{branch_type}Lo', 0)
+            hi = comp.value.get(f'{branch_type}Hi', 0)
+            sweep_vals = []
+            if lo is not None and hi is not None and lo > 0 and hi > lo:
+                sweep_vals = np.linspace(lo, hi, SWEEP_NUM)
+                to_sweeping_components[nodes].append(comp.name)
+            elif comp.value.get(branch_type, 0) > 0:
+                sweep_vals = [comp.value[branch_type]]
+
+            if len(sweep_vals):
+                current_vals = branches[nodes]
+                if current_vals:
+                    combo = product(current_vals, sweep_vals)
+                else:
+                    combo = [(x, ) for x in sweep_vals]
                 if branch_type == 'capacitance':
-                    branches[nodes] += comp.value['capacitance']
+                    branches[nodes] = [
+                        _combine_parallel_cap(*x) for x in combo
+                    ]
                 elif branch_type == "inductance":
-                    l = branches[nodes]
-                    if l:
-                        branches[nodes] = l * comp.value['inductance'] / (
-                            l + comp.value['inductance'])
-                    else:
-                        branches[nodes] = comp.value['inductance']
+                    branches[nodes] = [
+                        _combine_parallel_ind(*x) for x in combo
+                    ]
                 else:
                     raise ValueError(f'branch type {branch_type} is not valid')
-        return branches
+
+        return branches, to_sweeping_components
 
     def get_capacitance_branches(self):
         return self._get_branches('capacitance')
@@ -149,13 +179,6 @@ class Circuit:
                 branches[nodes] = comp.name
         return branches
 
-    def get_capacitance_graph(self):
-        cap_branches = self.get_capacitance_branches()
-        capGraph = defaultdict(dict)
-        for (node1, node2), val in cap_branches.items():
-            capGraph[node1][node2] = val
-        return capGraph
-
     def get_subsystem_to_nodes_map(self):
         subsystem_to_comps = self.get_component_name_subsystem()
         subsystem_to_nodes = {}
@@ -169,3 +192,20 @@ class Circuit:
                 nodes.extend(_nodes)
             subsystem_to_nodes[subsystem] = sorted(list(set(nodes)))
         return subsystem_to_nodes
+
+
+def map_sweeping_component_indices(comp_nodes, sweeping_components):
+    indices = {}
+    for _nodes in comp_nodes:
+        if _nodes in sweeping_components:
+            components = sweeping_components[_nodes]
+            num_comp = len(components)
+            idx_arr = [range(SWEEP_NUM) for _ in range(num_comp)]
+            idx_combo = product(*idx_arr)
+            indices[_nodes] = list(idx_combo)
+        else:
+            idx_arr = [range(1) for _ in range(1)]
+            idx_combo = product(*idx_arr)
+            indices[_nodes] = list(idx_combo)
+
+    return indices

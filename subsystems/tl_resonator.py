@@ -1,4 +1,3 @@
-from utils.utils import dict_to_float
 from .base import SubsystemGraph
 
 # {
@@ -39,8 +38,8 @@ class TLResonator(SubsystemGraph):
         subgraphs[loading_cap_name]['terminals'] = [
             f'{loading_cap_name}_1', f'{loading_cap_name}_2'
         ]
-        subgraphs[loading_cap_name]['value'] = dict_to_float(
-            self.circuit_graph[component_name]['value'])
+        subgraphs[loading_cap_name]['value'] = self.circuit_graph[
+            component_name]['value']
         subgraphs[loading_cap_name]['subsystem'] = subsys_name
 
         connections = {}

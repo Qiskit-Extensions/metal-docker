@@ -8,7 +8,12 @@ COPY requirements.txt requirements.txt
 
 RUN apt-get update \
     && apt-get install -y git \
+    && apt-get install -y libgdal-dev g++ --no-install-recommends \
     && pip3 install -r requirements.txt
+
+# Update C env vars so compiler can find gdal
+ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
+ENV C_INCLUDE_PATH=/usr/include/gdal
 
 COPY . .
 
