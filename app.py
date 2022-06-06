@@ -18,6 +18,6 @@ def simulate():
     for _ in tqdm(range(N)):
         _result = linalg.eigh(A, eigvals_only=True)
 
-    sim_results = jsonify(result=_result)
+    sim_results = jsonify(result=_result.tolist())
 
     return sim_results
