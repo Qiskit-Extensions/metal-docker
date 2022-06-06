@@ -1,18 +1,29 @@
-from validation.constants import *
+from .constants import *
 
 
 class Error(Exception):
 
     def __init__(self, e):
+        """A custom 'Exception' subclass to  format misc exceptions.
+        
+        Args:
+            e (Exception): The raised exception.
+        """
+
         self.message = e
         self.type = type(e).__name__
         self.error_message = BASE_ERROR % (self.type, self.message)
 
 
 class InvalidSubsystem(Exception):
-    """Raised when a component has an assigned subsystem that is not decalred in the subsystem dict."""
 
     def __init__(self, component_name, subsystem_name):
+        """A custom 'Exception' subclass to be raised when a component has an assigned subsystem that is not declared in the subsystem dict.
+
+        Args: 
+            component_name (str): Name of the component that has been assigned to an invalid subsystem 
+            subsystem_name (str): Name of the invalid subsystem
+        """
         self.subsystem_name = subsystem_name
         self.component_name = component_name
         self.error_message = INVALID_SUBSYSTEM % (self.subsystem_name,
@@ -20,21 +31,24 @@ class InvalidSubsystem(Exception):
 
 
 class NoAssignedSubsystems(Exception):
-    """Rasied when no component in the circuit graph has an assigned subsystem."""
 
     def __init__(self):
+        """A custom 'Exception' subclass to be rasied when no component in the circuit graph has an assigned subsystem."""
+
         self.error_message = NO_ASSIGNED_SUBSYSTEMS
 
 
 class InvalidReadoutOptions(Exception):
-    """Raised when """
 
     def __init__(self):
+        """Raised when """
+
         self.error_message = INVALID_READOUT_OPTION
 
 
 class NoSubsystems(Exception):
-    """Raised when the subsystem dict is empty."""
 
     def __init__(self):
+        """A custom 'Exception' subclass to be raised when the subsystem dict is empty."""
+
         self.error_message = NO_SUBSYSTEMS
