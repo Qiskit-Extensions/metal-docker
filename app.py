@@ -10,7 +10,7 @@ app.config['JSON_SORT_KEYS'] = False
 CORS(app)
 
 
-@app.route('/simulate', methods=['POST'])
+@app.route('/simulate', methods=['GET'])
 def simulate():
 
     N = 600
