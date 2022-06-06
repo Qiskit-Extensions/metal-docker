@@ -21,8 +21,8 @@ class InvalidSubsystem(Exception):
         """A custom 'Exception' subclass to be raised when a component has an assigned subsystem that is not declared in the subsystem dict.
 
         Args: 
-            component_name (str): Name of the component that has been assigned to an invalid subsystem 
-            subsystem_name (str): Name of the invalid subsystem
+            component_name (str): Name of the component that has been assigned to an invalid subsystem. 
+            subsystem_name (str): Name of the invalid subsystem.
         """
         self.subsystem_name = subsystem_name
         self.component_name = component_name
