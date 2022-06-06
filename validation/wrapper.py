@@ -1,5 +1,5 @@
 from .exceptions import *
-
+import logging
 
 def error_handling_wrapper(func):
     """A custom error handling wrapper to catch all exceptions raised during simulation. 
@@ -10,6 +10,7 @@ def error_handling_wrapper(func):
             return func(*args, **kwargs)
 
         except InvalidSubsystem as e:
+            logging.exception("Exception occurred")
             return {
                 'error': {
                     'type': type(e).__name__,
@@ -18,6 +19,7 @@ def error_handling_wrapper(func):
             }
 
         except InvalidReadoutOptions as e:
+            logging.exception("Exception occurred")
             return {
                 'error': {
                     'type': type(e).__name__,
@@ -25,6 +27,7 @@ def error_handling_wrapper(func):
                 }
             }
         except NoAssignedSubsystems as e:
+            logging.exception("Exception occurred")
             return {
                 'error': {
                     'type': type(e).__name__,
@@ -32,6 +35,7 @@ def error_handling_wrapper(func):
                 }
             }
         except NoSubsystems as e:
+            logging.exception("Exception occurred")
             return {
                 'error': {
                     'type': type(e).__name__,
@@ -39,6 +43,7 @@ def error_handling_wrapper(func):
                 }
             }
         except Exception as e:
+            logging.exception("Exception occurred")
             error = Error(e)
             return {
                 'error': {
