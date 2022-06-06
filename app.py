@@ -12,9 +12,8 @@ from graph_conversion.graph_conversion import Circuit
 from jupyter import generate_notebook
 from subsystems import TLResonator
 from utils.utils import dict_to_float
+from validation import validate_input, error_handling_wrapper
 
-from validation.exceptions import _error_handling_wrapper
-from validation.validate import ValidateInput
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
@@ -32,7 +31,7 @@ SUBSYSTEM_TYPE_MAP = {'TL_RESONATOR': TLResonator}
 
 def adj_list_to_mat(index, adj_list):
     """ convert adjacency list representation of capacitance graph to
-    a matrix representation
+    a matrix representation 
     """
     idx = index
     dim = len(idx)
@@ -171,20 +170,20 @@ def get_keep_nodes(subsystems):
 
 
 @app.route('/simulate', methods=['POST'])
-@_error_handling_wrapper
+@error_handling_wrapper
 def simulate():
     req = request.get_json()
     circuit_graph = req['Circuit Graph']
     subsystem_list = req['Subsystems']
 
-    ValidateInput(circuit_graph, subsystem_list)
+    validate_input(circuit_graph, subsystem_list)
 
     print('Circuit Graph:')
     pp.pp(circuit_graph)
 
     circuit_graph_renamed = rename_ground_nodes(circuit_graph)
     new_circuit_graph = add_subsystem_components(circuit_graph_renamed,
-                                                subsystem_list)
+                                                 subsystem_list)
 
     circuit_mvp = Circuit(new_circuit_graph)
 
@@ -205,7 +204,7 @@ def simulate():
     inp_keys_index = pd.Index(nodes)
     c_mats.append(
         _make_cmat_df(adj_list_to_mat(inp_keys_index, new_capacitance_graph),
-                    nodes))
+                      nodes))
     converted_capacitance = convert_netlist_to_maxwell(c_mats[0])
 
     subsystem_list = req['Subsystems']
@@ -226,18 +225,18 @@ def simulate():
     for subsystem, subsystem_metadata in subsystem_list.items():
         subsystems.append(
             Subsystem(name=subsystem,
-                    sys_type=subsystem_metadata['subsystem_type'],
-                    nodes=subsystem_metadata['nodes'],
-                    q_opts=subsystem_metadata.get('options', None)))
+                      sys_type=subsystem_metadata['subsystem_type'],
+                      nodes=subsystem_metadata['nodes'],
+                      q_opts=subsystem_metadata.get('options', None)))
 
     cell_list = []
     cell_list.append(
         Cell(
             dict(node_rename={},
-                cap_mat=converted_capacitance,
-                ind_dict=inductor_dict,
-                jj_dict=junction_dict,
-                cj_dict={})))
+                 cap_mat=converted_capacitance,
+                 ind_dict=inductor_dict,
+                 jj_dict=junction_dict,
+                 cj_dict={})))
 
     nodes_force_keep = get_keep_nodes(subsystems)
 
@@ -261,4 +260,3 @@ def simulate():
     sim_results = jsonify(sim_results)
 
     return sim_results
-
