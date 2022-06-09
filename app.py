@@ -308,13 +308,33 @@ def simulate():
     sim_results = {}
     sim_results['table'] = sweep_table
 
+    # pp.pprint(sweep_table)
+
     sweep_keys = sweep_table[0].keys()
     sweep_keys = [
         k for k in sweep_keys if k not in ['fQ_in_Ghz', 'chi_in_MHz']
     ]
     if sweep_keys:
+        sim_results['sweep_keys'] = {}
         sweep_table.sort(key=itemgetter(*sweep_keys))
-        sim_results['sweep_keys'] = sweep_keys
+        # sim_results['sweep_keys'] = sweep_keys
+
+        for key in sweep_keys:
+            component_name = "_".join(
+                "{}".format(k)
+                for k in key.split('_')[:len(key.split('_')) - 1])
+            component_sweep_key = key.split("_")[len(key.split("_")) - 1]
+            sim_results['sweep_keys'][key] = {
+                'component_name':
+                component_name,
+                'min':
+                circuit_graph[component_name]["value"][''.join(
+                    [component_sweep_key, "Lo"])],
+                'max':
+                circuit_graph[component_name]["value"][''.join(
+                    [component_sweep_key, "Hi"])],
+            }
+    pp.pp(sim_results['sweep_keys'])
 
     # notebook = generate_notebook(composite_sys)
     # sim_results['notebook'] = notebook
