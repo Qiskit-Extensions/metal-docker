@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict, namedtuple
 from itertools import product
 
-SWEEP_NUM = 5
+SWEEP_NUM = 3
 
 CircuitComponent = namedtuple('CircuitComponent', [
     'name', 'component_type', 'terminals', 'value', 'connections', 'subsystem'
@@ -65,6 +65,7 @@ def get_capacitance_graph(cap_branches):
 
 
 class Circuit:
+
     def __init__(self, circuit_graph):
         """
         Create a circuit object to manage circuit-level operations using a circuit component list and

@@ -334,7 +334,7 @@ def simulate():
                 circuit_graph[component_name]["value"][''.join(
                     [component_sweep_key, "Hi"])],
             }
-    pp.pp(sim_results['sweep_keys'])
+    # pp.pp(sim_results['sweep_keys'])
 
     # notebook = generate_notebook(composite_sys)
     # sim_results['notebook'] = notebook
