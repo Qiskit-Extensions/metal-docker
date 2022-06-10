@@ -14,6 +14,8 @@ from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem
 from graph_conversion.graph_conversion import Circuit, get_capacitance_graph, map_sweeping_component_indices, SWEEP_NUM
 from jupyter import generate_notebook
 from subsystems import TLResonator
+from utils.utils import dict_to_float
+from validation import validate_input, error_handling_wrapper
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
@@ -39,7 +41,7 @@ def sweep_dict_to_combo_list(sweep_dict):
 
 def adj_list_to_mat(index, adj_list):
     """ convert adjacency list representation of capacitance graph to
-    a matrix representation
+    a matrix representation 
     """
     idx = index
     dim = len(idx)
@@ -178,6 +180,7 @@ def get_keep_nodes(subsystems):
 
 
 @app.route('/simulate', methods=['POST'])
+@error_handling_wrapper
 def simulate():
     logging.info('Hitting simulate endpoint')
     req = request.get_json()
@@ -185,6 +188,10 @@ def simulate():
     subsystem_list = req['Subsystems']
 
     logging.info('Circuit graph and subsystems loaded')
+    validate_input(circuit_graph, subsystem_list)
+
+    print('Circuit Graph:')
+    pp.pp(circuit_graph)
 
     circuit_graph_renamed = rename_ground_nodes(circuit_graph)
     new_circuit_graph = add_subsystem_components(circuit_graph_renamed,

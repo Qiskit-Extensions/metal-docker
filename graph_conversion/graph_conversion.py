@@ -4,6 +4,8 @@ from itertools import product
 
 SWEEP_NUM = 3
 
+import logging
+
 CircuitComponent = namedtuple('CircuitComponent', [
     'name', 'component_type', 'terminals', 'value', 'connections', 'subsystem'
 ])
@@ -74,9 +76,12 @@ class Circuit:
         self._circuit_graph = circuit_graph
         self._circuit_component_list = []
 
-        self._circuit_component_list = []
+        # self._circuit_component_list = []
 
         for component_name, component_metadata in self._circuit_graph.items():
+            print(
+                f"within Circuit \n printing component:{component_name} \n{component_metadata} \n ------------------------------------"
+            )
             if component_metadata['subsystem']:
                 subsystem = component_metadata['subsystem']
             else:
@@ -119,6 +124,7 @@ class Circuit:
             # if comp is in a subsystem
             if subSys != '':
                 subDict[subSys].append(comp.name)
+        print(f"Subsystem dict: {subDict}")
         return subDict
 
     def _get_branches(self, branch_type):
