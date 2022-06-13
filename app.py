@@ -314,18 +314,14 @@ def simulate():
 
     sim_results = {}
     sim_results['table'] = sweep_table
-
-    # pp.pprint(sweep_table)
+    sim_results['sweep_keys'] = {}
 
     sweep_keys = sweep_table[0].keys()
     sweep_keys = [
         k for k in sweep_keys if k not in ['fQ_in_Ghz', 'chi_in_MHz']
     ]
     if sweep_keys:
-        sim_results['sweep_keys'] = {}
         sweep_table.sort(key=itemgetter(*sweep_keys))
-        # sim_results['sweep_keys'] = sweep_keys
-
         for key in sweep_keys:
             component_name = "_".join(
                 "{}".format(k)
