@@ -1,3 +1,4 @@
+from cmath import log
 from copy import deepcopy
 import json
 from itertools import product
@@ -19,6 +20,25 @@ from validation import validate_input, error_handling_wrapper
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+
+from flask import Flask, render_template
+from flask_sock import Sock
+
+sock = Sock(app)
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@sock.route('/echos')
+def echos(sock):
+    while True:
+        data = sock.receive()
+        print(data)
+        sock.send(data)
+
 
 CORS(app)
 
