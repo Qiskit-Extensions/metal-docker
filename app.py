@@ -8,7 +8,6 @@ from flask_cors import CORS
 import logging
 import pandas as pd
 import numpy as np
-import pprint as pp
 
 from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
 from graph_conversion.graph_conversion import Circuit, get_capacitance_graph, map_sweeping_component_indices, SWEEP_NUM
