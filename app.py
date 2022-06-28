@@ -12,9 +12,7 @@ import pprint as pp
 
 from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
 from graph_conversion.graph_conversion import Circuit, get_capacitance_graph, map_sweeping_component_indices, SWEEP_NUM
-from jupyter import generate_notebook
 from subsystems import TLResonator
-from utils.utils import dict_to_float
 from validation import validate_input, error_handling_wrapper
 
 app = Flask(__name__)
@@ -332,15 +330,7 @@ def simulate():
                 circuit_graph[component_name]["value"][''.join(
                     [component_sweep_key, "Hi"])],
             }
-    # pp.pp(sim_results['sweep_keys'])
 
-    # notebook = generate_notebook(composite_sys)
-    # sim_results['notebook'] = notebook
-    # sim_results['fQ_in_Ghz'] = hamiltonian_results['fQ_in_Ghz']
-
-    # res_df = hamiltonian_results['chi_in_MHz'].to_dataframe()
-
-    # sim_results['chi_in_MHz'] = json.loads(res_df.to_json(orient='records'))
     sim_results = jsonify(sim_results)
 
     logging.info('Returning sim results')
