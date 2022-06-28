@@ -71,6 +71,9 @@ def simulate(sock, request):
     inductor_comp_indices_lists = sweep_dict_to_combo_list(
         map_sweeping_component_indices(inductor_nodes, sweeping_inds))
 
+    simulation_length = len(inductor_vals_lists) * len(capacitor_vals_lists)
+    simulation_idx = 0
+
     sweep_table = []
     for inductor_vals, inductor_comp_indices in zip(
             inductor_vals_lists, inductor_comp_indices_lists):
@@ -92,10 +95,20 @@ def simulate(sock, request):
 
         for capacitor_vals, capacitor_comp_indices in zip(
                 capacitor_vals_lists, capacitor_comp_indices_lists):
-
+            simulation_idx+=1
+            sock.send(
+                json.dumps({
+                    "type": "sim_progress",
+                    "message": {
+                        "idx" : simulation_idx,
+                        "length" : simulation_length
+                    }
+                })
+            )
             sweep_entry = ind_sweep_key.copy()
             for _cap_val_idx, nodes in zip(capacitor_comp_indices,
                                            capacitor_nodes):
+                
                 if nodes in sweeping_caps:
                     cap_sweep_comps = sweeping_caps[nodes]
                     for _cap_val_ii, cap_sweep_comp in zip(

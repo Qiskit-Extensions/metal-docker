@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict, namedtuple
 from itertools import product
 
-SWEEP_NUM = 5
+SWEEP_NUM = 10
 
 import logging
 
