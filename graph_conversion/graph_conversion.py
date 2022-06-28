@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict, namedtuple
 from itertools import product
 
-SWEEP_NUM = 3
+SWEEP_NUM = 10
 
 import logging
 
@@ -67,7 +67,6 @@ def get_capacitance_graph(cap_branches):
 
 
 class Circuit:
-
     def __init__(self, circuit_graph):
         """
         Create a circuit object to manage circuit-level operations using a circuit component list and
@@ -79,9 +78,6 @@ class Circuit:
         # self._circuit_component_list = []
 
         for component_name, component_metadata in self._circuit_graph.items():
-            print(
-                f"within Circuit \n printing component:{component_name} \n{component_metadata} \n ------------------------------------"
-            )
             if component_metadata['subsystem']:
                 subsystem = component_metadata['subsystem']
             else:
