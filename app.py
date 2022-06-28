@@ -1,8 +1,10 @@
+from ast import While
 from cmath import log
 from copy import deepcopy
 import json
 from itertools import product
 from operator import itemgetter
+from fiona import prop_type
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -12,6 +14,7 @@ import numpy as np
 import pprint as pp
 
 from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
+from sympy import re
 from graph_conversion.graph_conversion import Circuit, get_capacitance_graph, map_sweeping_component_indices, SWEEP_NUM
 from jupyter import generate_notebook
 from subsystems import TLResonator
@@ -26,18 +29,23 @@ from flask_sock import Sock
 
 sock = Sock(app)
 
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
-@sock.route('/echos')
-def echos(sock):
+@sock.route('/socket')
+def socket(sock):
     while True:
-        data = sock.receive()
-        print(data)
-        sock.send(data)
+        data = json.loads(sock.receive())
+        print("(" + data['user'] + ") " + data['type'] + ": " +
+              str(data['message']))
+
+        if data['type'] == "userevent":
+            if data['message'] == "connected":
+                sock.send(json.dumps(data))
+
+        if data['type'] == "simulate":
+            sock.send(
+                json.dumps({
+                    "type": "sim_results",
+                    "message": simulate(sock, data['message'])
+                }))
 
 
 CORS(app)
@@ -199,11 +207,18 @@ def get_keep_nodes(subsystems):
     return keep_nodes
 
 
-@app.route('/simulate', methods=['POST'])
+# @app.route('/simulate', methods=['POST'])
 @error_handling_wrapper
-def simulate():
-    logging.info('Hitting simulate endpoint')
-    req = request.get_json()
+def simulate(sock, request):
+    sock.send("SIMULATION STARTED")
+    print("--------------------------------------")
+    # print(request)
+    # print(type(request))
+    # print(type(json.loads(request)))
+
+    # logging.info('Hitting simulate endpoint')
+    req = request
+    print(req)
     circuit_graph = req['Circuit Graph']
     subsystem_list = req['Subsystems']
 
@@ -366,8 +381,9 @@ def simulate():
     # res_df = hamiltonian_results['chi_in_MHz'].to_dataframe()
 
     # sim_results['chi_in_MHz'] = json.loads(res_df.to_json(orient='records'))
-    sim_results = jsonify(sim_results)
+    # sim_results = jsonify(sim_results)
 
     logging.info('Returning sim results')
 
     return sim_results
+    # sock.send(str({"type": "sim_results", "message": sim_results}))

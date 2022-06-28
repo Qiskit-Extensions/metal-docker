@@ -21,15 +21,15 @@ def validate_subsystems_list(subsystems_list: dict):
         subsystems_list (dict): A dict containing the list of all subsystems
     """
     if (subsystems_list == {}):
+        # sock.send({"type": "error", "message": NoSubsystems.error_message})
         raise NoSubsystems
     else:
         for subsystem_name, subsystem_metadata in subsystems_list.items():
             if subsystem_metadata['subsystem_type'] == 'TL_RESONATOR':
                 if not all(key in subsystem_metadata["options"]
                            for key in TL_RESONATOR_KEYS):
-                    raise InvalidReadoutOptions(
-                        subsystem_name,
-                        subsystem_metadata["options"])
+                    raise InvalidReadoutOptions(subsystem_name,
+                                                subsystem_metadata["options"])
 
 
 def validate_components_subsystems(graph: dict, subsystems_list: dict):
