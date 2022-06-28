@@ -1,4 +1,4 @@
-# git+https://github.com/Qiskit/qiskit-metal.git@metal-cloud-v2
+git+https://github.com/Qiskit/qiskit-metal.git@metal-cloud-v2
 # qiskit-metal # this will be ok for running the app locally but will break for building docker image
 Flask==2.0.2
 flask-cors
