@@ -14,9 +14,6 @@ from graph_conversion.graph_conversion import Circuit, get_capacitance_graph, ma
 from subsystems import TLResonator
 from validation import validate_input, error_handling_wrapper
 
-import cProfile, pstats, io
-from pstats import SortKey
-
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
@@ -181,9 +178,6 @@ def get_keep_nodes(subsystems):
 @error_handling_wrapper
 def simulate():
 
-    pr = cProfile.Profile()
-    pr.enable()
-
     # print(np.show_config())
     np.seterr(divide='ignore')
 
@@ -191,6 +185,9 @@ def simulate():
     req = request.get_json()
     circuit_graph = req['Circuit Graph']
     subsystem_list = req['Subsystems']
+
+    s_keep_provided = False
+    s_remove_provided = False
 
     logging.info('Circuit graph and subsystems loaded')
     validate_input(circuit_graph, subsystem_list)
@@ -298,10 +295,18 @@ def simulate():
 
             nodes_force_keep = get_keep_nodes(subsystems)
 
-            composite_sys = CompositeSystem(subsystems=subsystems,
-                                            cells=cell_list,
-                                            grd_node='GND_gnd',
-                                            nodes_force_keep=nodes_force_keep)
+            composite_sys = CompositeSystem(
+                subsystems=subsystems,
+                cells=cell_list,
+                grd_node='GND_gnd',
+                nodes_force_keep=nodes_force_keep,
+                s_keep_provided=s_keep_provided,
+                s_remove_provided=s_remove_provided,
+            )
+
+            if s_keep_provided is False:
+                s_keep_provided = composite_sys.circuitGraph().S_keep
+                s_remove_provided = composite_sys.circuitGraph().S_remove
 
             hilbertspace = composite_sys.add_interaction()
             hamiltonian_results = composite_sys.hamiltonian_results(
@@ -339,31 +344,6 @@ def simulate():
                 circuit_graph[component_name]["value"][''.join(
                     [component_sweep_key, "Hi"])],
             }
-
-    pr.disable()
-    s = io.StringIO()
-    sortby = SortKey.CUMULATIVE
-    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    ps.print_stats()
-
-    lines = s.getvalue().split('\n')
-    summary = lines[0]
-    profile_data = []
-    for l in lines[5:]:
-        items = l.split()
-        times = items[:5]
-        func = ''.join(items[5:])
-        columns = times + [func]
-        profile_data.append(columns)
-
-    profile_df = pd.DataFrame(profile_data,
-                              columns=[
-                                  'ncalls', 'tottime', '_percall', 'cumtime',
-                                  'percall', 'function'
-                              ])
-    profile_df.drop(columns='_percall', inplace=True)
-    sim_results['profile'] = json.loads(profile_df.to_json(orient='records'))
-    sim_results['profile_summary'] = summary
 
     sim_results = jsonify(sim_results)
 
