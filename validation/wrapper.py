@@ -1,6 +1,7 @@
 from .exceptions import *
 import logging
 
+
 def error_handling_wrapper(func):
     """A custom error handling wrapper to catch all exceptions raised during simulation. 
     """
