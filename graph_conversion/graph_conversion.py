@@ -4,8 +4,6 @@ from itertools import product
 
 SWEEP_NUM = 10
 
-import logging
-
 CircuitComponent = namedtuple('CircuitComponent', [
     'name', 'component_type', 'terminals', 'value', 'connections', 'subsystem'
 ])
@@ -120,7 +118,6 @@ class Circuit:
             # if comp is in a subsystem
             if subSys != '':
                 subDict[subSys].append(comp.name)
-        print(f"Subsystem dict: {subDict}")
         return subDict
 
     def _get_branches(self, branch_type):
