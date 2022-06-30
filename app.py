@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask import Flask
 from flask_sock import Sock
 
-from simulation import simulate
+from simulation import simulate #rename simulate to lom_simulate?
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
@@ -25,6 +25,7 @@ def sim(sock):
             sock.send(json.dumps({"type": "sim_results", "message": results}))
 
 
-# Create new socket routes following the example above
-
 CORS(app)
+
+# pull in cahnges from connor-main for backend (this)
+# pull in changes from curent-main for frontend
