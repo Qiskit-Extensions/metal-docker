@@ -24,6 +24,8 @@ def sim(sock):
         elif data['type'] == "simulate":
             results = simulate(sock, data['message'])
             sock.send(json.dumps({"type": "sim_results", "message": results}))
+            sock.close()
+            break
 
 
 CORS(app)
