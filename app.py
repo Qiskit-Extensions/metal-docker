@@ -16,7 +16,6 @@ sock = Sock(app)
 def sim(sock):
     while True:
         data = json.loads(sock.receive())
-        print(data['type'] + ": " + str(data['message']))
 
         if data['type'] == "socket-connected":
             sock.send(json.dumps(data))

@@ -15,15 +15,13 @@ def sweep_dict_to_combo_list(sweep_dict):
 
 def adj_list_to_mat(index, adj_list):
     """ convert adjacency list representation of capacitance graph to
-    a matrix representation 
+    a matrix representation
     """
     idx = index
     dim = len(idx)
     mat = np.zeros((dim, dim))
     for n1 in adj_list:
-        # print('n1:', n1)
         for n2, w in adj_list[n1]:
-            # print('n2:', n2, '\nw:', w)
             r = idx.get_indexer([n1])[0]
             c = idx.get_indexer([n2])[0]
             mat[r, c] += w
