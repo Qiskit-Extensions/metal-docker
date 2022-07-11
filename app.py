@@ -2,7 +2,7 @@ import json
 
 from flask_cors import CORS
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sock import Sock
 
 from simulation import simulate  #rename simulate to lom_simulate?
@@ -25,6 +25,12 @@ def sim(sock):
             sock.send(json.dumps({"type": "sim_results", "message": results}))
             sock.close()
             break
+
+
+@app.route('/test', methods=['GET'])
+def test():
+    results = jsonify(message='success!')
+    return results
 
 
 CORS(app)
