@@ -92,13 +92,13 @@ def simulate(sock, graphObj, sweepSteps):
                         'inductanceHi']
                     try:
                         sweep_step = int(sweepSteps[ind_sweep_comp +
-                                                    " inductance"])
+                                                    "_inductance"])
                         sweep_vals = np.linspace(lo, hi, sweep_step)
                         ind_sweep_key[
                             f'{ind_sweep_comp}_inductance'] = sweep_vals[
                                 _ind_val_ii]
                     except Exception:
-                        raise InvalidSweepingSteps(ind_sweep_comp + " inductance")
+                        raise InvalidSweepingSteps(ind_sweep_comp + "_inductance")
 
         ind_branches = dict(zip(inductor_nodes, inductor_vals))
 
@@ -127,14 +127,14 @@ def simulate(sock, graphObj, sweepSteps):
                             'capacitanceHi']
                         try:
                             sweep_step = int(sweepSteps[cap_sweep_comp +
-                                                        " capacitance"])
+                                                        "_capacitance"])
                             sweep_vals = np.linspace(lo, hi, sweep_step)
                             sweep_entry[
                                 f'{cap_sweep_comp}_capacitance'] = sweep_vals[
                                     _cap_val_ii]
                         except Exception:
                             raise InvalidSweepingSteps(cap_sweep_comp +
-                                                       " capacitance")
+                                                       "_capacitance")
 
             cap_branch = dict(zip(capacitor_nodes, capacitor_vals))
             capacitance_graph = get_capacitance_graph(cap_branch)

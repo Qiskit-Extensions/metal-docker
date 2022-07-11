@@ -140,12 +140,13 @@ class Circuit:
             sweep_vals = []
             if lo is not None and hi is not None and lo > 0 and hi > lo:
                 try:
-                    sweep_step = int(self._sweep_steps[" ".join(
+                    sweep_step = int(self._sweep_steps["_".join(
                         [comp.name, branch_type])])
                     sweep_vals = np.linspace(lo, hi, sweep_step)
                     to_sweeping_components[nodes].append(comp.name)
-                except Exception: 
-                    raise InvalidSweepingSteps(" ".join([comp.name, branch_type]))
+                except Exception:
+                    raise InvalidSweepingSteps("_".join(
+                        [comp.name, branch_type]))
             elif comp.value.get(branch_type, 0) > 0:
                 sweep_vals = [comp.value[branch_type]]
 
@@ -206,13 +207,17 @@ class Circuit:
         return subsystem_to_nodes
 
 
-def map_sweeping_component_indices(comp_nodes, sweeping_components, sweep_steps, branch_type):
+def map_sweeping_component_indices(comp_nodes, sweeping_components,
+                                   sweep_steps, branch_type):
     indices = {}
     for _nodes in comp_nodes:
         if _nodes in sweeping_components:
             components = sweeping_components[_nodes]
             num_comp = len(components)
-            idx_arr = [range(int(sweep_steps[sweep_step+" "+branch_type])) for sweep_step in components]
+            idx_arr = [
+                range(int(sweep_steps[sweep_step + "_" + branch_type]))
+                for sweep_step in components
+            ]
             idx_combo = product(*idx_arr)
             indices[_nodes] = list(idx_combo)
         else:
