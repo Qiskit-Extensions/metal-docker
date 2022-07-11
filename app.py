@@ -21,8 +21,10 @@ def sim(sock):
             sock.send(json.dumps(data))
 
         elif data['type'] == "simulate":
-            results = simulate(sock, data['message'])
-            sock.send(json.dumps({"type": "sim_results", "message": results}))
+            graphObj = data['message']['graphObj']
+            sweepSteps = data['message']['sweepSteps']
+            results = simulate(sock, graphObj, sweepSteps)
+            sock.send(json.dumps({"type": "sim_results", "message": {"results": results, "sweepSteps": sweepSteps}}))
             sock.close()
             break
 

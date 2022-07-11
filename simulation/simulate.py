@@ -8,19 +8,18 @@ import json
 from qiskit_metal.analyses.quantization.lom_core_analysis import CompositeSystem, Cell, Subsystem
 from graph_conversion.graph_conversion import Circuit, get_capacitance_graph, map_sweeping_component_indices, SWEEP_NUM
 # from jupyter import generate_notebook
-from validation import validate_input, error_handling_wrapper
+from validation import validate_input, error_handling_wrapper, InvalidSweepingSteps
 
 from .methods import *
 
 
 @error_handling_wrapper
-def simulate(sock, request):
+def simulate(sock, graphObj, sweepSteps):
     sock.send("SIMULATION STARTED")
     logging.info('Hitting simulate endpoint')
 
-    req = request
-    circuit_graph = req['Circuit Graph']
-    subsystem_list = req['Subsystems']
+    circuit_graph = graphObj['Circuit Graph']
+    subsystem_list = graphObj['Subsystems']
 
     s_keep_provided = False
     s_remove_provided = False
@@ -35,12 +34,13 @@ def simulate(sock, request):
 
     circuit_mvp = Circuit(new_circuit_graph)
 
+    circuit_mvp.set_sweep_steps(sweepSteps)
     capacitor_dict, sweeping_caps = circuit_mvp.get_capacitance_branches()
     inductor_dict, sweeping_inds = circuit_mvp.get_inductance_branches()
     junction_dict = circuit_mvp.get_jj_branches()
 
     subsystem_map = circuit_mvp.get_subsystem_to_nodes_map()
-    subsystem_list = req['Subsystems']
+    subsystem_list = graphObj['Subsystems']
 
     # Check subsystem_map to see if the pair of nodes is in the junction list and replace if it is
     for subsystem, nodes in subsystem_map.items():
@@ -65,12 +65,14 @@ def simulate(sock, request):
     capacitor_nodes = capacitor_dict.keys()
     capacitor_vals_lists = sweep_dict_to_combo_list(capacitor_dict)
     capacitor_comp_indices_lists = sweep_dict_to_combo_list(
-        map_sweeping_component_indices(capacitor_nodes, sweeping_caps))
+        map_sweeping_component_indices(capacitor_nodes, sweeping_caps,
+                                       sweepSteps, "capacitance"))
 
     inductor_nodes = inductor_dict.keys()
     inductor_vals_lists = sweep_dict_to_combo_list(inductor_dict)
     inductor_comp_indices_lists = sweep_dict_to_combo_list(
-        map_sweeping_component_indices(inductor_nodes, sweeping_inds))
+        map_sweeping_component_indices(inductor_nodes, sweeping_inds,
+                                       sweepSteps, "inductance"))
 
     simulation_length = len(inductor_vals_lists) * len(capacitor_vals_lists)
     simulation_idx = 0
@@ -88,9 +90,15 @@ def simulate(sock, request):
                         'inductanceLo']
                     hi = new_circuit_graph[ind_sweep_comp]['value'][
                         'inductanceHi']
-                    sweep_vals = np.linspace(lo, hi, SWEEP_NUM)
-                    ind_sweep_key[f'{ind_sweep_comp}_inductance'] = sweep_vals[
-                        _ind_val_ii]
+                    if sweepSteps[ind_sweep_comp + " inductance"]:
+                        sweep_step = int(sweepSteps[ind_sweep_comp +
+                                                    " inductance"])
+                        sweep_vals = np.linspace(lo, hi, sweep_step)
+                        ind_sweep_key[
+                            f'{ind_sweep_comp}_inductance'] = sweep_vals[
+                                _ind_val_ii]
+                    else:
+                        raise InvalidSweepingSteps(ind_sweep_comp + " inductance")
 
         ind_branches = dict(zip(inductor_nodes, inductor_vals))
 
@@ -117,10 +125,16 @@ def simulate(sock, request):
                             'capacitanceLo']
                         hi = new_circuit_graph[cap_sweep_comp]['value'][
                             'capacitanceHi']
-                        sweep_vals = np.linspace(lo, hi, SWEEP_NUM)
-                        sweep_entry[
-                            f'{cap_sweep_comp}_capacitance'] = sweep_vals[
-                                _cap_val_ii]
+                        if sweepSteps[cap_sweep_comp + " capacitance"]:
+                            sweep_step = int(sweepSteps[cap_sweep_comp +
+                                                        " capacitance"])
+                            sweep_vals = np.linspace(lo, hi, sweep_step)
+                            sweep_entry[
+                                f'{cap_sweep_comp}_capacitance'] = sweep_vals[
+                                    _cap_val_ii]
+                        else:
+                            raise InvalidSweepingSteps(cap_sweep_comp +
+                                                       " capacitance")
 
             cap_branch = dict(zip(capacitor_nodes, capacitor_vals))
             capacitance_graph = get_capacitance_graph(cap_branch)

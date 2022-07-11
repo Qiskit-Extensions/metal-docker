@@ -57,3 +57,10 @@ class NoSubsystems(Exception):
         """A custom 'Exception' subclass to be raised when the subsystem dict is empty."""
 
         self.error_message = NO_SUBSYSTEMS
+
+class InvalidSweepingSteps(Exception):
+
+    def __init__(self, component_name ):
+        """Raised when the sweeping step input is 0 or invalid"""
+
+        self.error_message = INVALID_SWEEPING_STEPS % (component_name)

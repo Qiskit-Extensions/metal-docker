@@ -10,3 +10,4 @@ INVALID_READOUT_OPTION = 'The subsytem \'%s\' of type \'TL_RESONATOR\' does not 
     '\"{}\" : ... ,'.format(k) for k in
     (TL_RESONATOR_KEYS[:len(TL_RESONATOR_KEYS) - 1])) + '\"{}\" : ... '.format(
         TL_RESONATOR_KEYS[len(TL_RESONATOR_KEYS) - 1]) + '}'
+INVALID_SWEEPING_STEPS = "You have not entered a valid input for component %s. Correctly enter input in the Sweeping Step Count panel."

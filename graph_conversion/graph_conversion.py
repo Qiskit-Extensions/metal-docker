@@ -2,7 +2,9 @@ import numpy as np
 from collections import defaultdict, namedtuple
 from itertools import product
 
-SWEEP_NUM = 10
+from validation.exceptions import InvalidSweepingSteps
+
+SWEEP_NUM = 3
 
 CircuitComponent = namedtuple('CircuitComponent', [
     'name', 'component_type', 'terminals', 'value', 'connections', 'subsystem'
@@ -65,6 +67,7 @@ def get_capacitance_graph(cap_branches):
 
 
 class Circuit:
+
     def __init__(self, circuit_graph):
         """
         Create a circuit object to manage circuit-level operations using a circuit component list and
@@ -72,6 +75,7 @@ class Circuit:
         """
         self._circuit_graph = circuit_graph
         self._circuit_component_list = []
+        self._sweep_steps = {}
 
         # self._circuit_component_list = []
 
@@ -135,8 +139,15 @@ class Circuit:
             hi = comp.value.get(f'{branch_type}Hi', 0)
             sweep_vals = []
             if lo is not None and hi is not None and lo > 0 and hi > lo:
-                sweep_vals = np.linspace(lo, hi, SWEEP_NUM)
-                to_sweeping_components[nodes].append(comp.name)
+                try:
+                    sweep_step = int(self._sweep_steps[" ".join(
+                        [comp.name, branch_type])])
+                    print(sweep_step)
+
+                    sweep_vals = np.linspace(lo, hi, sweep_step)
+                    to_sweeping_components[nodes].append(comp.name)
+                except Exception: 
+                    raise InvalidSweepingSteps(" ".join([comp.name, branch_type]))
             elif comp.value.get(branch_type, 0) > 0:
                 sweep_vals = [comp.value[branch_type]]
 
@@ -158,6 +169,9 @@ class Circuit:
                     raise ValueError(f'branch type {branch_type} is not valid')
 
         return branches, to_sweeping_components
+
+    def set_sweep_steps(self, sweep_steps):
+        self._sweep_steps = sweep_steps
 
     def get_capacitance_branches(self):
         return self._get_branches('capacitance')
@@ -194,13 +208,23 @@ class Circuit:
         return subsystem_to_nodes
 
 
-def map_sweeping_component_indices(comp_nodes, sweeping_components):
+def map_sweeping_component_indices(comp_nodes, sweeping_components, sweep_steps, branch_type):
+    print("---------------------")
+    print(list(sweeping_components.values()))
+    print(branch_type)
     indices = {}
     for _nodes in comp_nodes:
         if _nodes in sweeping_components:
             components = sweeping_components[_nodes]
             num_comp = len(components)
-            idx_arr = [range(SWEEP_NUM) for _ in range(num_comp)]
+            print(components)
+            print(num_comp)
+            print("---------")
+
+            # sweep_steps[]
+
+            idx_arr = [range(int(sweep_steps[sweep_step+" "+branch_type])) for sweep_step in components]
+            print(idx_arr)
             idx_combo = product(*idx_arr)
             indices[_nodes] = list(idx_combo)
         else:
