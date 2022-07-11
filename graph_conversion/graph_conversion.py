@@ -142,8 +142,6 @@ class Circuit:
                 try:
                     sweep_step = int(self._sweep_steps[" ".join(
                         [comp.name, branch_type])])
-                    print(sweep_step)
-
                     sweep_vals = np.linspace(lo, hi, sweep_step)
                     to_sweeping_components[nodes].append(comp.name)
                 except Exception: 
@@ -209,22 +207,12 @@ class Circuit:
 
 
 def map_sweeping_component_indices(comp_nodes, sweeping_components, sweep_steps, branch_type):
-    print("---------------------")
-    print(list(sweeping_components.values()))
-    print(branch_type)
     indices = {}
     for _nodes in comp_nodes:
         if _nodes in sweeping_components:
             components = sweeping_components[_nodes]
             num_comp = len(components)
-            print(components)
-            print(num_comp)
-            print("---------")
-
-            # sweep_steps[]
-
             idx_arr = [range(int(sweep_steps[sweep_step+" "+branch_type])) for sweep_step in components]
-            print(idx_arr)
             idx_combo = product(*idx_arr)
             indices[_nodes] = list(idx_combo)
         else:
