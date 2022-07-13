@@ -3,6 +3,8 @@ import numpy as np
 from copy import deepcopy
 from itertools import product
 
+from validation.exceptions import SweepingStepsExceedsLimit
+
 from .constants import *
 
 
@@ -161,5 +163,4 @@ def extractSweepSteps(graphObj):
         if "inductanceSweep" in list(value["value"].keys()):
             sweepSteps[element +
                        "_inductance"] = value['value']['inductanceSweepSteps']
-    print(sweepSteps)
     return sweepSteps

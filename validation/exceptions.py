@@ -64,3 +64,10 @@ class InvalidSweepingSteps(Exception):
         """Raised when the sweeping step input is 0 or invalid"""
 
         self.error_message = INVALID_SWEEPING_STEPS % (component_name)
+
+class SweepingStepsExceedsLimit(Exception):
+
+    def __init__(self ):
+        """Raised when the product of all sweeping steps exceeds the limit"""
+
+        self.error_message = SWEEPING_STEPS_EXCEEDS_LIMIT

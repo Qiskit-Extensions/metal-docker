@@ -51,6 +51,14 @@ def error_handling_wrapper(func):
                     'message': e.error_message
                 }
             }
+        except SweepingStepsExceedsLimit as e:
+            logging.exception("Exception occurred")
+            return {
+                'error': {
+                    'type': type(e).__name__,
+                    'message': e.error_message
+                }
+            }
         except Exception as e:
             logging.exception("Exception occurred")
             error = Error(e)

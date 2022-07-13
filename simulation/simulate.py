@@ -25,7 +25,7 @@ def simulate(sock, graphObj, sweepSteps):
     s_remove_provided = False
 
     logging.info('Circuit graph and subsystems loaded')
-    validate_input(circuit_graph, subsystem_list)
+    validate_input(circuit_graph, subsystem_list, sweepSteps)
 
     np.seterr(divide='ignore')
     circuit_graph_renamed = rename_ground_nodes(circuit_graph)
@@ -34,7 +34,6 @@ def simulate(sock, graphObj, sweepSteps):
 
     circuit_mvp = Circuit(new_circuit_graph)
 
-    print(sweepSteps)
     circuit_mvp.set_sweep_steps(sweepSteps)
     capacitor_dict, sweeping_caps = circuit_mvp.get_capacitance_branches()
     inductor_dict, sweeping_inds = circuit_mvp.get_inductance_branches()
