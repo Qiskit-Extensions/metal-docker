@@ -149,3 +149,17 @@ def get_keep_nodes(subsystems):
             keep_nodes.extend(subsystem.nodes)
 
     return keep_nodes
+
+
+def extractSweepSteps(graphObj):
+    sweepSteps = {}
+    for element, value in graphObj['Circuit Graph'].items():
+        if "capacitanceSweep" in list(value["value"].keys()):
+            sweepSteps[
+                element +
+                "_capacitance"] = value['value']['capacitanceSweepSteps']
+        if "inductanceSweep" in list(value["value"].keys()):
+            sweepSteps[element +
+                       "_inductance"] = value['value']['inductanceSweepSteps']
+    print(sweepSteps)
+    return sweepSteps

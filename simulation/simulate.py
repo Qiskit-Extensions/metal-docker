@@ -34,6 +34,7 @@ def simulate(sock, graphObj, sweepSteps):
 
     circuit_mvp = Circuit(new_circuit_graph)
 
+    print(sweepSteps)
     circuit_mvp.set_sweep_steps(sweepSteps)
     capacitor_dict, sweeping_caps = circuit_mvp.get_capacitance_branches()
     inductor_dict, sweeping_inds = circuit_mvp.get_inductance_branches()
@@ -98,7 +99,8 @@ def simulate(sock, graphObj, sweepSteps):
                             f'{ind_sweep_comp}_inductance'] = sweep_vals[
                                 _ind_val_ii]
                     except Exception:
-                        raise InvalidSweepingSteps(ind_sweep_comp + "_inductance")
+                        raise InvalidSweepingSteps(ind_sweep_comp +
+                                                   "_inductance")
 
         ind_branches = dict(zip(inductor_nodes, inductor_vals))
 

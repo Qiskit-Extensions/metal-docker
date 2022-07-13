@@ -1,3 +1,4 @@
+from cmath import log
 import json
 
 from flask_cors import CORS
@@ -5,7 +6,7 @@ from flask_cors import CORS
 from flask import Flask
 from flask_sock import Sock
 
-from simulation import simulate  #rename simulate to lom_simulate?
+from simulation import simulate, extractSweepSteps  #rename simulate to lom_simulate?
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
@@ -21,10 +22,18 @@ def sim(sock):
             sock.send(json.dumps(data))
 
         elif data['type'] == "simulate":
-            graphObj = data['message']['graphObj']
-            sweepSteps = data['message']['sweepSteps']
+            graphObj = data['message']
+            sweepSteps = extractSweepSteps(graphObj)
+            # print(data['message'])
             results = simulate(sock, graphObj, sweepSteps)
-            sock.send(json.dumps({"type": "sim_results", "message": {"results": results, "sweepSteps": sweepSteps}}))
+            sock.send(
+                json.dumps({
+                    "type": "sim_results",
+                    "message": {
+                        "results": results,
+                        "sweepSteps": sweepSteps
+                    }
+                }))
             sock.close()
             break
 
