@@ -95,16 +95,15 @@ class Circuit:
             all_connections = {**all_connections, **comp.connections}
 
         connected_terminals = _find_connected_terminals(all_connections)
-        nodes = []
-        for idx, group in enumerate(connected_terminals):
+        excluding_gnd = []
+        gnd_group = None
+        for group in connected_terminals:
             if 'GND_gnd' in group:
-                nodes.append('GND_gnd')
+                gnd_group = group
             else:
-                # ***********************************
-                # Prefix 'F' is  crucial because it makes sure
-                # the ground node is always ordered after the other nodes
-                # ***********************************
-                nodes.append(f'F{idx+1}')
+                excluding_gnd.append(group)
+        connected_terminals = [gnd_group] + excluding_gnd
+        nodes = [f'n{ii}' for ii in range(len(connected_terminals))]
 
         self.nodes_to_terminals = dict(zip(nodes, connected_terminals))
         terminals_to_nodes = {}
@@ -129,11 +128,9 @@ class Circuit:
         to_sweeping_components = defaultdict(list)
         for comp in self._circuit_component_list:
             nodes = tuple(
-                sorted(
-                    list(
-                        set([
-                            self.terminals_to_nodes[t] for t in comp.terminals
-                        ]))))
+                sorted(list(
+                    set([self.terminals_to_nodes[t] for t in comp.terminals])),
+                       reverse=True))
 
             lo = comp.value.get(f'{branch_type}Lo', 0)
             hi = comp.value.get(f'{branch_type}Hi', 0)
@@ -183,12 +180,11 @@ class Circuit:
         for comp in self._circuit_component_list:
             if comp.component_type == "josephson_junction":
                 nodes = tuple(
-                    sorted(
-                        list(
-                            set([
-                                self.terminals_to_nodes[t]
-                                for t in comp.terminals
-                            ]))))
+                    sorted(list(
+                        set([
+                            self.terminals_to_nodes[t] for t in comp.terminals
+                        ])),
+                           reverse=True))
                 branches[nodes] = comp.name
         return branches
 
@@ -203,7 +199,8 @@ class Circuit:
                            self._circuit_component_list))[0].terminals
                 _nodes = [self.terminals_to_nodes[t] for t in terminals]
                 nodes.extend(_nodes)
-            subsystem_to_nodes[subsystem] = sorted(list(set(nodes)))
+            subsystem_to_nodes[subsystem] = sorted(list(set(nodes)),
+                                                   reverse=True)
         return subsystem_to_nodes
 
 
