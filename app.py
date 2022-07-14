@@ -27,7 +27,6 @@ def sim(sock):
         elif data['type'] == "simulate":
             graphObj = data['message']
             sweepSteps = extractSweepSteps(graphObj)
-            # print(data['message'])
             results = simulate(sock, graphObj, sweepSteps)
             sock.send(
                 json.dumps({
@@ -47,7 +46,7 @@ def test():
     return results
 
 
-@app.route('/get_circuit_code', methos=['POST'])
+@app.route('/get_circuit_code', methods=['POST'])
 @error_handling_wrapper
 def get_circuit_code():
 

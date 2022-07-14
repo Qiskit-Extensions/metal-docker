@@ -53,6 +53,9 @@ def validate_components_subsystems(graph: dict, subsystems_list: dict):
         raise NoAssignedSubsystems
 
 def validate_sweep_steps(sweepSteps: dict):    
+    """Calculates the total amount of sweep steps. Raises an error if
+        the product is above 1000.
+    """
     product = 1
     for element in sweepSteps:
         product *= sweepSteps[element]
