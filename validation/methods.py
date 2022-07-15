@@ -55,11 +55,11 @@ def validate_components_subsystems(graph: dict, subsystems_list: dict):
 
 def validate_sweep_steps(sweepSteps: dict):
     """Calculates the total amount of sweep steps. Raises an error if
-        the product is above 1000.
+        the product is above 1500.
     """
     product = 1
     for element in sweepSteps:
         product *= sweepSteps[element] if sweepSteps[element] is not None else 1
 
-    if product > 1000:
+    if product > 1500:
         raise SweepingStepsExceedsLimit
