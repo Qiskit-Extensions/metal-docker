@@ -3,6 +3,8 @@ import numpy as np
 from copy import deepcopy
 from itertools import product
 
+from validation.exceptions import SweepingStepsExceedsLimit
+
 from .constants import *
 
 
@@ -149,3 +151,16 @@ def get_keep_nodes(subsystems):
             keep_nodes.extend(subsystem.nodes)
 
     return keep_nodes
+
+
+def extractSweepSteps(graphObj):
+    sweepSteps = {}
+    for element, value in graphObj['Circuit Graph'].items():
+        if "capacitanceSweep" in list(value["value"].keys()):
+            sweepSteps[
+                element +
+                "_capacitance"] = value['value']['capacitanceSweepSteps']
+        if "inductanceSweep" in list(value["value"].keys()):
+            sweepSteps[element +
+                       "_inductance"] = value['value']['inductanceSweepSteps']
+    return sweepSteps

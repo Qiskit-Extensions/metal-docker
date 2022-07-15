@@ -2,7 +2,7 @@ from .exceptions import *
 from .constants import TL_RESONATOR_KEYS
 
 
-def validate_input(graph: dict, subsystems_list: dict):
+def validate_input(graph: dict, subsystems_list: dict, sweepSteps: dict):
     """Runs all validation functions. Main function to be imported by app.py
 
     Args:
@@ -11,6 +11,7 @@ def validate_input(graph: dict, subsystems_list: dict):
     """
     validate_subsystems_list(subsystems_list)
     validate_components_subsystems(graph, subsystems_list)
+    validate_sweep_steps(sweepSteps)
 
 
 def validate_subsystems_list(subsystems_list: dict):
@@ -50,3 +51,14 @@ def validate_components_subsystems(graph: dict, subsystems_list: dict):
 
     if (not validSubsystemExists):
         raise NoAssignedSubsystems
+
+def validate_sweep_steps(sweepSteps: dict):    
+    """Calculates the total amount of sweep steps. Raises an error if
+        the product is above 1000.
+    """
+    product = 1
+    for element in sweepSteps:
+        product *= sweepSteps[element]
+
+    if product > 1000:
+        raise SweepingStepsExceedsLimit

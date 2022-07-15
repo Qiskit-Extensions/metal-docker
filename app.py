@@ -1,3 +1,4 @@
+from cmath import log
 import json
 
 from flask_cors import CORS
@@ -5,7 +6,7 @@ from flask_cors import CORS
 from flask import Flask, jsonify, request
 from flask_sock import Sock
 
-from simulation import simulate  #rename simulate to lom_simulate?
+from simulation import simulate, extractSweepSteps  #rename simulate to lom_simulate?
 from validation import error_handling_wrapper
 from graph_conversion.graph_conversion import Circuit
 from simulation import rename_ground_nodes
@@ -24,8 +25,17 @@ def sim(sock):
             sock.send(json.dumps(data))
 
         elif data['type'] == "simulate":
-            results = simulate(sock, data['message'])
-            sock.send(json.dumps({"type": "sim_results", "message": results}))
+            graphObj = data['message']
+            sweepSteps = extractSweepSteps(graphObj)
+            results = simulate(sock, graphObj, sweepSteps)
+            sock.send(
+                json.dumps({
+                    "type": "sim_results",
+                    "message": {
+                        "results": results,
+                        "sweepSteps": sweepSteps
+                    }
+                }))
             sock.close()
             break
 
