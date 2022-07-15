@@ -12,6 +12,8 @@ from validation import validate_input, error_handling_wrapper, InvalidSweepingSt
 
 from .methods import *
 
+GND_NODE = 'n0'
+
 
 @error_handling_wrapper
 def simulate(sock, graphObj, sweepSteps):
@@ -51,7 +53,7 @@ def simulate(sock, graphObj, sweepSteps):
             # 'nodes' for the subsystem in subsystem_list to the remaining nodes
             if subsystem is not None:
                 subsystem_list[subsystem]['nodes'] = [
-                    n for n in nodes if n != 'GND_gnd'
+                    n for n in nodes if n != GND_NODE
                 ]
 
     subsystems = []
@@ -162,7 +164,7 @@ def simulate(sock, graphObj, sweepSteps):
             composite_sys = CompositeSystem(
                 subsystems=subsystems,
                 cells=cell_list,
-                grd_node='GND_gnd',
+                grd_node=GND_NODE,
                 nodes_force_keep=nodes_force_keep,
                 s_keep_provided=s_keep_provided,
                 s_remove_provided=s_remove_provided,

@@ -15,9 +15,9 @@ def validate_input(graph: dict, subsystems_list: dict, sweepSteps: dict):
 
 
 def validate_subsystems_list(subsystems_list: dict):
-    """"Checks if the list of subsystems is non empty. 
+    """"Checks if the list of subsystems is non empty.
     Checks that any subsystem of type 'TL_RESONATOR' has the necessary option keys.
-    
+
     Args:
         subsystems_list (dict): A dict containing the list of all subsystems
     """
@@ -34,7 +34,7 @@ def validate_subsystems_list(subsystems_list: dict):
 
 
 def validate_components_subsystems(graph: dict, subsystems_list: dict):
-    """Check if any components have a assigned subsystem, and if that 
+    """Check if any components have a assigned subsystem, and if that
     subsystem is present in the list of subsystems.
 
     Args:
@@ -52,13 +52,14 @@ def validate_components_subsystems(graph: dict, subsystems_list: dict):
     if (not validSubsystemExists):
         raise NoAssignedSubsystems
 
-def validate_sweep_steps(sweepSteps: dict):    
+
+def validate_sweep_steps(sweepSteps: dict):
     """Calculates the total amount of sweep steps. Raises an error if
         the product is above 1000.
     """
     product = 1
     for element in sweepSteps:
-        product *= sweepSteps[element]
+        product *= sweepSteps[element] if sweepSteps[element] is not None else 1
 
     if product > 1000:
         raise SweepingStepsExceedsLimit
