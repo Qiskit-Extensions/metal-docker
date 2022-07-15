@@ -36,7 +36,7 @@ def test():
     return results
 
 
-@app.route('/get_circuit_code', methos=['POST'])
+@app.route('/get_circuit_code', methods=['POST'])
 @error_handling_wrapper
 def get_circuit_code():
 
@@ -58,8 +58,7 @@ def get_circuit_code():
     - ["L", 4, 1, 0.008]
     - ["C", 1, 3, 0.02]
     - ["C", 2, 4, 0.02]
-    """
-    '''
+    """'''
 
     results = jsonify(code_string=code_string)
     return results
